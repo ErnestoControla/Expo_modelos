@@ -13,19 +13,14 @@ from queue import Queue
 import sys
 import os
 
-# Importar configuración y utilidades
+# Importar configuración
 from config import CameraConfig, StatsConfig, GlobalConfig
 
 # Obtener el código de soporte común para el GigE-V Framework
-sys.path.append(os.path.dirname(__file__) + "/" + GlobalConfig.GIGEV_COMMON_PATH)
+sys.path.append("../gigev_common")
 
-try:
-    import pygigev
-    from pygigev import GevPixelFormats as GPF
-    GIGEV_AVAILABLE = True
-except ImportError:
-    print("⚠️ Advertencia: pygigev no disponible, usando OpenCV como fallback")
-    GIGEV_AVAILABLE = False
+import pygigev
+from pygigev import GevPixelFormats as GPF
 
 
 class CamaraTiempoOptimizada:
@@ -34,7 +29,7 @@ class CamaraTiempoOptimizada:
     
     Características:
     - Captura asíncrona continua con doble buffer
-    - Optimizado para resolución alta (1280x1024)
+    - Optimizado para resolución 640x640
     - Procesamiento en tiempo real con mínima latencia
     - Gestión automática de memoria
     - Estadísticas de rendimiento en tiempo real
@@ -90,11 +85,6 @@ class CamaraTiempoOptimizada:
         # Información de payload
         self.payload_size = None
         self.pixel_format = None
-        
-        # Fallback a OpenCV si no hay GigE
-        self.use_opencv_fallback = not GIGEV_AVAILABLE
-        if self.use_opencv_fallback:
-            self.cap = None
 
     def configurar_camara(self):
         """
@@ -104,368 +94,446 @@ class CamaraTiempoOptimizada:
             bool: True si la configuración fue exitosa
         """
         try:
-            if self.use_opencv_fallback:
-                return self._configurar_opencv_fallback()
-            
             # Inicializar API GigE
             pygigev.GevApiInitialize()
             
-            # Encontrar cámara por IP
-            self.camIndex = self._encontrar_camara_por_ip()
+            # Buscar cámaras disponibles
+            numFound = (ctypes.c_uint32)(0)
+            camera_info = (pygigev.GEV_CAMERA_INFO * CameraConfig.MAX_CAMERAS)()
+            status = pygigev.GevGetCameraList(camera_info, CameraConfig.MAX_CAMERAS, ctypes.byref(numFound))
+            
+            if status != 0 or numFound.value == 0:
+                print("❌ Error buscando cámaras")
+                return False
+
+            # Buscar cámara por IP
+            target_ip_int = self._ip_to_int(self.ip)
+            self.camIndex = -1
+            for i in range(numFound.value):
+                if camera_info[i].ipAddr == target_ip_int:
+                    self.camIndex = i
+                    break
+
             if self.camIndex == -1:
-                print(f"❌ No se encontró cámara en IP: {self.ip}")
+                print(f"❗No se encontró la cámara con IP {self.ip}")
                 return False
-            
+
             # Abrir cámara
-            self.handle = pygigev.GevOpenCameraByIndex(self.camIndex)
-            if not self.handle:
-                print(f"❌ Error abriendo cámara en índice {self.camIndex}")
+            self.handle = (ctypes.c_void_p)()
+            status = pygigev.GevOpenCamera(
+                camera_info[self.camIndex], 
+                pygigev.GevExclusiveMode, 
+                ctypes.byref(self.handle)
+            )
+            if status != 0:
+                print(f"❌ Error abriendo cámara")
+                return False
+
+            # Configurar parámetros de la cámara
+            if not self._configurar_parametros_camara():
                 return False
             
-            # Configurar parámetros de cámara
-            self._configurar_parametros_camara()
+            # Configurar ROI
+            if not self._configurar_roi():
+                return False
             
             # Configurar buffers
-            self._configurar_buffers()
-            
-            # Configurar callbacks
-            self._configurar_callbacks()
-            
-            print(f"✅ Cámara configurada correctamente en IP: {self.ip}")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error configurando cámara: {e}")
-            return False
-
-    def _configurar_opencv_fallback(self):
-        """Configura OpenCV como fallback si no hay GigE disponible"""
-        try:
-            # Intentar abrir cámara webcam como fallback
-            self.cap = cv2.VideoCapture(0)
-            if not self.cap.isOpened():
-                print("❌ No se pudo abrir cámara webcam como fallback")
+            if not self._configurar_buffers():
                 return False
             
-            # Configurar parámetros básicos
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.roi_width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.roi_height)
-            self.cap.set(cv2.CAP_PROP_FPS, self.framerate)
-            
-            print("✅ Cámara OpenCV configurada como fallback")
+            # Inicializar transferencia asíncrona
+            if not self._inicializar_transferencia():
+                return False
+
+            print("📷 Cámara configurada para captura asíncrona")
             return True
-            
+
         except Exception as e:
-            print(f"❌ Error configurando fallback OpenCV: {e}")
+            print(f"❌ Error en configuración: {e}")
             return False
 
-    def _encontrar_camara_por_ip(self):
-        """Encuentra el índice de la cámara por IP"""
+    def _ip_to_int(self, ip_str):
+        """Convierte IP string a entero para comparación"""
         try:
-            num_cameras = pygigev.GevGetCameraCount()
-            print(f"🔍 Buscando cámara en IP: {self.ip}")
-            print(f"   Cámaras disponibles: {num_cameras}")
-            
-            for i in range(num_cameras):
-                camera_info = pygigev.GevGetCameraInfo(i)
-                if camera_info and camera_info.ipAddr == self.ip:
-                    print(f"   ✅ Cámara encontrada en índice {i}")
-                    return i
-            
-            print(f"   ❌ No se encontró cámara en IP: {self.ip}")
-            return -1
-            
+            import socket
+            return int.from_bytes(socket.inet_aton(ip_str), byteorder='big')
         except Exception as e:
-            print(f"❌ Error buscando cámara: {e}")
-            return -1
+            print(f"⚠️ Error convirtiendo IP {ip_str}: {e}")
+            return 0
 
     def _configurar_parametros_camara(self):
-        """Configura parámetros específicos de la cámara"""
+        """Configura los parámetros básicos de la cámara."""
         try:
-            # Configurar ROI
-            pygigev.GevSetIntValue(self.handle, "Width", self.roi_width)
-            pygigev.GevSetIntValue(self.handle, "Height", self.roi_height)
-            pygigev.GevSetIntValue(self.handle, "OffsetX", self.roi_offset_x)
-            pygigev.GevSetIntValue(self.handle, "OffsetY", self.roi_offset_y)
+            configuraciones = [
+                ("ExposureTime", ctypes.c_float(self.exposure_time)),
+                ("AcquisitionFrameRate", ctypes.c_float(self.framerate)),
+                ("Gain", ctypes.c_float(self.gain))
+            ]
+
+            for nombre, valor in configuraciones:
+                status = pygigev.GevSetFeatureValue(
+                    self.handle,
+                    nombre.encode(),
+                    ctypes.sizeof(valor),
+                    ctypes.byref(valor)
+                )
+                if status == 0:
+                    print(f"✅ {nombre} configurado: {valor.value}")
+                else:
+                    print(f"❌ Error configurando {nombre}")
+                    return False
             
-            # Configurar exposición y ganancia
-            pygigev.GevSetIntValue(self.handle, "ExposureTime", self.exposure_time)
-            pygigev.GevSetFloatValue(self.handle, "Gain", self.gain)
-            
-            # Configurar framerate
-            pygigev.GevSetFloatValue(self.handle, "AcquisitionFrameRate", self.framerate)
-            
-            # Configurar tamaño de paquete
-            pygigev.GevSetIntValue(self.handle, "GevSCPSPacketSize", self.packet_size)
-            
-            print("   ✅ Parámetros de cámara configurados")
+            return True
             
         except Exception as e:
-            print(f"   ⚠️ Error configurando parámetros: {e}")
+            print(f"❌ Error configurando parámetros: {e}")
+            return False
+
+    def _configurar_roi(self):
+        """Configura la región de interés (ROI)."""
+        try:
+            roi_configs = [
+                ("Width", self.roi_width),
+                ("Height", self.roi_height),
+                ("OffsetX", self.roi_offset_x),
+                ("OffsetY", self.roi_offset_y)
+            ]
+
+            for nombre, valor in roi_configs:
+                valor_int64 = (ctypes.c_int64)(valor)
+                status = pygigev.GevSetFeatureValue(
+                    self.handle,
+                    nombre.encode(),
+                    ctypes.sizeof(valor_int64),
+                    ctypes.byref(valor_int64)
+                )
+                if status == 0:
+                    print(f"✅ {nombre} configurado: {valor}")
+                else:
+                    print(f"❌ Error configurando {nombre}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error configurando ROI: {e}")
+            return False
 
     def _configurar_buffers(self):
-        """Configura buffers de memoria para captura"""
+        """Configura los buffers de captura."""
         try:
-            # Obtener información del payload
-            self.payload_size = pygigev.GevGetIntValue(self.handle, "PayloadSize")
-            self.pixel_format = pygigev.GevGetEnumValue(self.handle, "PixelFormat")
-            
-            print(f"   📊 Payload: {self.payload_size} bytes, Pixel: {self.pixel_format}")
-            
-            # Configurar buffers
-            pygigev.GevSetIntValue(self.handle, "StreamBufferHandlingMode", 1)
-            pygigev.GevSetIntValue(self.handle, "StreamBufferCountManual", self.num_buffers)
-            
-            print("   ✅ Buffers configurados")
-            
-        except Exception as e:
-            print(f"   ⚠️ Error configurando buffers: {e}")
+            # Obtener parámetros de payload
+            self.payload_size = (ctypes.c_uint64)()
+            self.pixel_format = (ctypes.c_uint32)()
+            status = pygigev.GevGetPayloadParameters(
+                self.handle,
+                ctypes.byref(self.payload_size),
+                ctypes.byref(self.pixel_format)
+            )
+            if status != 0:
+                print("❌ Error obteniendo parámetros de payload")
+                return False
 
-    def _configurar_callbacks(self):
-        """Configura callbacks para captura asíncrona"""
-        try:
-            # Configurar callback de frame
-            pygigev.GevSetImageEventCallback(self.handle, self._on_frame_received)
+            # Configurar buffers con margen extra
+            self.buffer_addresses = ((ctypes.c_void_p) * self.num_buffers)()
+            bufsize = self.payload_size.value + GlobalConfig.BUFFER_MARGIN
             
-            print("   ✅ Callbacks configurados")
-            
-        except Exception as e:
-            print(f"   ⚠️ Error configurando callbacks: {e}")
+            for i in range(self.num_buffers):
+                temp = ((ctypes.c_char) * bufsize)()
+                self.buffer_addresses[i] = ctypes.cast(temp, ctypes.c_void_p)
 
-    def _on_frame_received(self, handle, buffer_address, buffer_size, user_data):
-        """Callback llamado cuando se recibe un frame"""
-        try:
-            with self.buffer_lock:
-                # Cambiar índices de buffer
-                self.read_buffer_idx = self.write_buffer_idx
-                self.write_buffer_idx = (self.write_buffer_idx + 1) % 2
-                
-                # Procesar frame recibido
-                frame_data = ctypes.cast(buffer_address, ctypes.POINTER(ctypes.c_ubyte * buffer_size))
-                frame_array = np.frombuffer(frame_data.contents, dtype=np.uint8)
-                
-                # Convertir a imagen OpenCV
-                frame = frame_array.reshape((self.roi_height, self.roi_width, -1))
-                
-                # Almacenar frame procesado
-                self.processed_frames[self.read_buffer_idx] = frame.copy()
-                self.frame_ready[self.read_buffer_idx] = True
-                self.frame_timestamps[self.read_buffer_idx] = time.time()
-                
-                # Señalar que hay frame listo
-                self.frame_ready_event.set()
-                
-                # Actualizar estadísticas
-                self.total_frames_captured += 1
-                
+            print(f"✅ Buffers asignados: {self.num_buffers} de {bufsize} bytes")
+            return True
+            
         except Exception as e:
-            print(f"⚠️ Error en callback de frame: {e}")
+            print(f"❌ Error configurando buffers: {e}")
+            return False
+
+    def _inicializar_transferencia(self):
+        """Inicializa la transferencia asíncrona."""
+        try:
+            status = pygigev.GevInitializeTransfer(
+                self.handle,
+                pygigev.Asynchronous,  # Modo asíncrono
+                self.payload_size,
+                self.num_buffers,
+                self.buffer_addresses
+            )
+            if status != 0:
+                print("❌ Error inicializando transferencia asíncrona")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error inicializando transferencia: {e}")
+            return False
 
     def iniciar_captura_continua(self):
         """
-        Inicia la captura continua de frames.
+        Inicia el thread de captura continua.
         
         Returns:
             bool: True si la captura se inició correctamente
         """
-        try:
-            if self.use_opencv_fallback:
-                return True  # OpenCV ya está capturando continuamente
-            
-            # Iniciar captura
-            pygigev.GevStartAcquisition(self.handle)
-            
-            # Iniciar thread de captura
-            self.capture_active = True
-            self.capture_thread = threading.Thread(target=self._thread_captura_continua)
-            self.capture_thread.daemon = True
-            self.capture_thread.start()
-            
-            self.start_time = time.time()
-            print("✅ Captura continua iniciada")
+        if self.capture_thread and self.capture_thread.is_alive():
+            print("⚠️ La captura ya está activa")
             return True
             
-        except Exception as e:
-            print(f"❌ Error iniciando captura continua: {e}")
+        self.capture_active = True
+        self.capture_thread = threading.Thread(
+            target=self._thread_captura_continua,
+            daemon=True
+        )
+        self.capture_thread.start()
+        
+        # Esperar a que el primer frame esté listo
+        if self.frame_ready_event.wait(timeout=CameraConfig.STARTUP_TIMEOUT):
+            print("✅ Captura continua iniciada correctamente")
+            return True
+        else:
+            print("❌ Timeout esperando primer frame")
             return False
 
     def _thread_captura_continua(self):
-        """Thread para captura continua de frames"""
+        """Thread dedicado a captura continua de frames."""
+        print("🚀 Iniciando captura continua...")
+        
+        # Iniciar transferencia continua
+        status = pygigev.GevStartTransfer(self.handle, -1)
+        if status != 0:
+            print("❌ Error iniciando transferencia continua")
+            return
+            
+        self.start_time = time.time()
+        frame_local_count = 0
+        
         try:
             while self.capture_active:
-                # Esperar frame
-                if self.frame_ready_event.wait(timeout=0.1):
-                    self.frame_ready_event.clear()
+                capture_start = time.time()
+                gevbufPtr = ctypes.POINTER(pygigev.GEV_BUFFER_OBJECT)()
+                
+                # Esperar frame con timeout
+                status = pygigev.GevWaitForNextFrame(
+                    self.handle,
+                    ctypes.byref(gevbufPtr),
+                    int(CameraConfig.FRAME_TIMEOUT * 1000)  # Convertir a ms
+                )
+
+                if status != 0:
+                    if self.capture_active:
+                        continue  # Timeout normal, continuar
+                    else:
+                        break
+
+                capture_time = (time.time() - capture_start) * 1000
+                
+                # Procesar frame de manera asíncrona
+                processing_start = time.time()
+                if self._procesar_frame_async(gevbufPtr):
+                    frame_local_count += 1
+                    self.total_frames_captured += 1
                     
-                    # Procesar frame si es necesario
-                    time.sleep(0.001)  # Pequeña pausa para no saturar CPU
+                    # Actualizar estadísticas
+                    if not self.capture_times.full():
+                        self.capture_times.put(capture_time)
+                    
+                    processing_time = (time.time() - processing_start) * 1000
+                    if not self.processing_times.full():
+                        self.processing_times.put(processing_time)
+                    
+                    # Señalar que hay un frame listo
+                    self.frame_ready_event.set()
+                
+                # Liberar el buffer inmediatamente
+                if gevbufPtr:
+                    pygigev.GevReleaseFrame(self.handle, gevbufPtr)
                     
         except Exception as e:
-            print(f"⚠️ Error en thread de captura: {e}")
+            print(f"❌ Error en thread de captura: {e}")
+        finally:
+            # Detener transferencia
+            if self.handle:
+                pygigev.GevStopTransfer(self.handle)
+            print(f"📊 Thread de captura terminado. Frames capturados: {frame_local_count}")
+
+    def _procesar_frame_async(self, gevbufPtr):
+        """
+        Procesa frame de manera asíncrona en el buffer de escritura actual.
+        
+        Args:
+            gevbufPtr: Puntero al buffer de GigE
+            
+        Returns:
+            bool: True si el procesamiento fue exitoso
+        """
+        try:
+            gevbuf = gevbufPtr.contents
+            if gevbuf.status != 0:
+                return False
+
+            # Convertir datos del buffer
+            im_addr = ctypes.cast(
+                gevbuf.address,
+                ctypes.POINTER(ctypes.c_ubyte * gevbuf.recv_size)
+            )
+            raw_data = np.frombuffer(im_addr.contents, dtype=np.uint8)
+            raw_data = raw_data.reshape((self.roi_height, self.roi_width))
+            
+            # Procesar imagen (conversión Bayer a RGB)
+            frame_rgb = cv2.cvtColor(raw_data, cv2.COLOR_BayerRG2RGB)
+            
+            # Actualizar buffer de escritura atómicamente
+            with self.buffer_lock:
+                # Guardar frame procesado en buffer de escritura
+                self.processed_frames[self.write_buffer_idx] = frame_rgb.copy()
+                self.frame_ready[self.write_buffer_idx] = True
+                self.frame_timestamps[self.write_buffer_idx] = time.time()
+                
+                # Rotar índices de buffers
+                self._rotar_buffers()
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error procesando frame async: {e}")
+            return False
+
+    def _rotar_buffers(self):
+        """Rota los índices de buffers de manera circular."""
+        # Intercambiar buffers de manera simple
+        self.write_buffer_idx, self.read_buffer_idx = self.read_buffer_idx, self.write_buffer_idx
 
     def obtener_frame_instantaneo(self):
         """
-        Obtiene un frame instantáneo de la cámara.
+        Obtiene el frame más reciente de manera instantánea (~1ms).
         
         Returns:
-            tuple: (frame, tiempo_acceso, timestamp) o (None, 0, 0) si hay error
+            tuple: (frame, tiempo_acceso_ms, timestamp) o (None, tiempo_acceso_ms, 0)
         """
-        try:
-            if self.use_opencv_fallback:
-                return self._obtener_frame_opencv()
-            
-            start_time = time.time()
-            
-            # Esperar frame listo
-            if not self.frame_ready_event.wait(timeout=CameraConfig.FRAME_TIMEOUT):
-                return None, 0, 0
-            
-            with self.buffer_lock:
-                if not self.frame_ready[self.read_buffer_idx]:
-                    return None, 0, 0
-                
-                # Obtener frame
+        start_time = time.time()
+        
+        with self.buffer_lock:
+            if self.frame_ready[self.read_buffer_idx]:
+                # Copiar frame del buffer de lectura
                 frame = self.processed_frames[self.read_buffer_idx].copy()
                 timestamp = self.frame_timestamps[self.read_buffer_idx]
                 
-                # Marcar como no listo
+                # Marcar como procesado
                 self.frame_ready[self.read_buffer_idx] = False
-            
-            tiempo_acceso = (time.time() - start_time) * 1000
-            
-            # Actualizar estadísticas
-            if self.capture_times.qsize() < StatsConfig.CAPTURE_TIMES_QUEUE_SIZE:
-                self.capture_times.put(tiempo_acceso)
-            
-            return frame, tiempo_acceso, timestamp
-            
-        except Exception as e:
-            print(f"⚠️ Error obteniendo frame: {e}")
-            return None, 0, 0
+                
+                elapsed = (time.time() - start_time) * 1000
+                return frame, elapsed, timestamp
+            else:
+                # No hay frame nuevo, devolver el último disponible
+                for i in range(2):
+                    if self.frame_ready[i]:
+                        frame = self.processed_frames[i].copy()
+                        timestamp = self.frame_timestamps[i]
+                        elapsed = (time.time() - start_time) * 1000
+                        return frame, elapsed, timestamp
+        
+        elapsed = (time.time() - start_time) * 1000
+        return None, elapsed, 0
 
-    def _obtener_frame_opencv(self):
-        """Obtiene frame usando OpenCV como fallback"""
-        try:
-            start_time = time.time()
-            
-            ret, frame = self.cap.read()
-            if not ret:
-                return None, 0, 0
-            
-            # Redimensionar si es necesario
-            if frame.shape[:2] != (self.roi_height, self.roi_width):
-                frame = cv2.resize(frame, (self.roi_width, self.roi_height))
-            
-            tiempo_acceso = (time.time() - start_time) * 1000
-            timestamp = time.time()
-            
-            # Actualizar estadísticas
-            if self.capture_times.qsize() < StatsConfig.CAPTURE_TIMES_QUEUE_SIZE:
-                self.capture_times.put(tiempo_acceso)
-            
-            return frame, tiempo_acceso, timestamp
-            
-        except Exception as e:
-            print(f"⚠️ Error obteniendo frame OpenCV: {e}")
-            return None, 0, 0
+    def capturar_frame(self):
+        """
+        Captura un frame de la cámara (compatibilidad).
+        
+        Returns:
+            np.ndarray or None: Frame capturado o None si hay error
+        """
+        frame, tiempo, timestamp = self.obtener_frame_instantaneo()
+        return frame
 
     def obtener_estadisticas(self):
         """
-        Obtiene estadísticas de rendimiento de la cámara.
+        Obtiene estadísticas de rendimiento.
         
         Returns:
-            dict: Estadísticas de la cámara
+            dict: Diccionario con estadísticas de rendimiento
         """
+        if self.start_time == 0:
+            return {}
+            
+        tiempo_total = time.time() - self.start_time
+        fps_real = self.total_frames_captured / tiempo_total if tiempo_total > 0 else 0
+        
+        # Promedios de tiempos
+        capture_times_list = list(self.capture_times.queue)
+        processing_times_list = list(self.processing_times.queue)
+        
+        stats = {
+            'fps_real': fps_real,
+            'frames_totales': self.total_frames_captured,
+            'tiempo_total': tiempo_total,
+            'buffers_listos': sum(self.frame_ready),
+            'ip_camara': self.ip,
+            'roi_size': f"{self.roi_width}x{self.roi_height}",
+            'exposure_time': self.exposure_time,
+            'framerate': self.framerate
+        }
+        
+        return stats
+
+    def detener_captura(self):
+        """Detiene la captura continua."""
+        self.capture_active = False
+        if self.capture_thread and self.capture_thread.is_alive():
+            self.capture_thread.join(timeout=CameraConfig.SHUTDOWN_TIMEOUT)
+        print("🛑 Captura continua detenida")
+
+    def liberar(self):
+        """Liberar recursos de la cámara."""
         try:
-            # Calcular estadísticas de tiempo de captura
-            capture_times_list = list(self.capture_times.queue)
-            tiempo_captura = {}
-            if capture_times_list:
-                tiempo_captura = {
-                    'promedio': np.mean(capture_times_list),
-                    'std': np.std(capture_times_list),
-                    'min': np.min(capture_times_list),
-                    'max': np.max(capture_times_list)
-                }
+            # Detener captura
+            self.detener_captura()
             
-            # Calcular estadísticas de tiempo de procesamiento
-            processing_times_list = list(self.processing_times.queue)
-            tiempo_procesamiento = {}
-            if processing_times_list:
-                tiempo_procesamiento = {
-                    'promedio': np.mean(processing_times_list),
-                    'std': np.std(processing_times_list),
-                    'min': np.min(processing_times_list),
-                    'max': np.max(processing_times_list)
-                }
+            # Limpiar buffers de manera segura
+            with self.buffer_lock:
+                try:
+                    if hasattr(self, 'processed_frames') and self.processed_frames is not None:
+                        for i in range(len(self.processed_frames)):
+                            if i < len(self.processed_frames) and self.processed_frames[i] is not None:
+                                del self.processed_frames[i]
+                        self.processed_frames = [None] * 2
+                    if hasattr(self, 'frame_ready') and self.frame_ready is not None:
+                        self.frame_ready = [False] * 2
+                except Exception as e:
+                    print(f"   - Error limpiando buffers: {e}")
+                    self.processed_frames = [None] * 2
+                    self.frame_ready = [False] * 2
             
-            # Calcular FPS real
-            fps_real = 0
-            if self.start_time > 0:
-                tiempo_total = time.time() - self.start_time
-                if tiempo_total > 0:
-                    fps_real = self.total_frames_captured / tiempo_total
+            # Cerrar cámara
+            if self.handle:
+                try:
+                    pygigev.GevCloseCamera(self.handle)
+                except:
+                    pass
+                self.handle = None
             
-            return {
-                'fps_real': fps_real,
-                'frames_totales': self.total_frames_captured,
-                'buffers_listos': sum(self.frame_ready),
-                'tiempo_captura': tiempo_captura,
-                'tiempo_procesamiento': tiempo_procesamiento,
-                'ip_camara': self.ip,
-                'resolucion': f"{self.roi_width}x{self.roi_height}",
-                'framerate_config': self.framerate,
-                'exposure_time': self.exposure_time,
-                'gain': self.gain
-            }
+            try:
+                pygigev.GevApiUninitialize()
+            except:
+                pass
+            
+            print("✅ Recursos de cámara liberados correctamente")
             
         except Exception as e:
-            print(f"⚠️ Error obteniendo estadísticas: {e}")
-            return {}
+            print(f"❌ Error liberando recursos de cámara: {e}")
 
     def mostrar_configuracion(self):
         """Muestra la configuración actual de la cámara."""
         print(f"\n📷 CONFIGURACIÓN DE CÁMARA:")
         print(f"   IP: {self.ip}")
-        print(f"   Resolución: {self.roi_width}x{self.roi_height}")
-        print(f"   ROI Offset: ({self.roi_offset_x}, {self.roi_offset_y})")
-        print(f"   Framerate: {self.framerate} FPS")
-        print(f"   Exposición: {self.exposure_time} μs")
+        print(f"   ROI: {self.roi_width}x{self.roi_height} @ ({self.roi_offset_x},{self.roi_offset_y})")
+        print(f"   Exposición: {self.exposure_time} µs")
+        print(f"   Frame Rate: {self.framerate} FPS")
         print(f"   Ganancia: {self.gain}")
         print(f"   Buffers: {self.num_buffers}")
-        print(f"   Protocolo: {'GigE' if not self.use_opencv_fallback else 'OpenCV (fallback)'}")
-
-    def liberar(self):
-        """Libera todos los recursos de la cámara."""
-        try:
-            print("🧹 Liberando recursos de cámara...")
-            
-            # Detener captura continua
-            self.capture_active = False
-            if self.capture_thread and self.capture_thread.is_alive():
-                self.capture_thread.join(timeout=CameraConfig.SHUTDOWN_TIMEOUT)
-            
-            if self.use_opencv_fallback:
-                if self.cap:
-                    self.cap.release()
-                    self.cap = None
-            else:
-                # Liberar recursos GigE
-                if self.handle:
-                    try:
-                        pygigev.GevStopAcquisition(self.handle)
-                        pygigev.GevCloseCamera(self.handle)
-                    except:
-                        pass
-                    self.handle = None
-                
-                # Finalizar API
-                try:
-                    pygigev.GevApiTerminate()
-                except:
-                    pass
-            
-            print("✅ Recursos de cámara liberados")
-            
-        except Exception as e:
-            print(f"⚠️ Error liberando recursos: {e}")
+        print(f"   Payload: {self.payload_size.value if self.payload_size else 'N/A'} bytes")
+        
+        if self.capture_active:
+            print("   Estado: CAPTURANDO")
+        else:
+            print("   Estado: DETENIDO")

@@ -58,7 +58,8 @@ Asegúrate de que los archivos del modelo estén en el directorio `Modelos/`:
 ### Cámara GigE (Recomendado)
 El sistema está configurado para usar cámaras GigE con la siguiente configuración por defecto:
 - **IP**: 172.16.1.21
-- **Resolución**: 1280x1024
+- **Resolución nativa**: 4112x2176
+- **ROI activo**: 640x640 (centrado)
 - **Framerate**: 10 FPS
 - **Exposición**: 20ms
 
@@ -121,7 +122,7 @@ python main.py
 ### Parámetros del modelo
 Edita `config.py` para ajustar:
 - Umbral de confianza
-- Tamaño de entrada del modelo
+- Tamaño de entrada del modelo (640x640)
 - Proveedores ONNX
 - Configuración de threads
 
@@ -130,6 +131,14 @@ Edita `config.py` para ajustar:
 - Framerate
 - Tamaño de ROI
 - Configuración de buffers
+
+### Configuración del ROI
+El sistema utiliza un ROI (Region of Interest) de 640x640 píxeles centrado en la imagen nativa de 4112x2176:
+- **Resolución nativa**: 4112x2176 píxeles
+- **ROI activo**: 640x640 píxeles
+- **Offset X**: 1736 píxeles (centrado horizontalmente)
+- **Offset Y**: 768 píxeles (centrado verticalmente)
+- **Área de captura**: Centro de la imagen para máxima calidad
 
 ### Visualización
 - Colores de etiquetas

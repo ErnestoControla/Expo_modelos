@@ -60,7 +60,7 @@ class ClasificadorCoplesONNX:
         
         # Configuración
         self.confidence_threshold = ModelsConfig.CONFIDENCE_THRESHOLD
-        self.input_size = ModelsConfig.INPUT_SIZE
+        self.input_size = ModelsConfig.INPUT_SIZE  # 640x640
         
         # Cargar clases
         self._cargar_clases()
@@ -146,7 +146,7 @@ class ClasificadorCoplesONNX:
             imagen (np.ndarray): Imagen de entrada (BGR)
             
         Returns:
-            np.ndarray: Imagen preprocesada
+            np.ndarray: Imagen preprocesada en formato [1, 3, 640, 640]
         """
         try:
             # Convertir BGR a RGB
@@ -158,8 +158,11 @@ class ClasificadorCoplesONNX:
             # Normalizar a [0, 1]
             imagen_normalized = imagen_resized.astype(np.float32) / 255.0
             
-            # Agregar dimensión de batch
-            imagen_batch = np.expand_dims(imagen_normalized, axis=0)
+            # Transponer de [H, W, C] a [C, H, W] para formato ONNX
+            imagen_transposed = np.transpose(imagen_normalized, (2, 0, 1))
+            
+            # Agregar dimensión de batch: [C, H, W] -> [1, C, H, W]
+            imagen_batch = np.expand_dims(imagen_transposed, axis=0)
             
             return imagen_batch
             

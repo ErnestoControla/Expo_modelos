@@ -13,7 +13,11 @@ class CameraConfig:
     DEFAULT_IP = "172.16.1.21"
     MAX_CAMERAS = 16
     
-    # Parámetros de captura optimizados para resolución alta
+    # Resolución nativa de la cámara
+    NATIVE_WIDTH = 4112
+    NATIVE_HEIGHT = 2176
+    
+    # Parámetros de captura optimizados para resolución estándar
     EXPOSURE_TIME = 20000      # 20ms - tiempo de exposición optimizado
     FRAMERATE = 10.0          # 10 FPS - reducido para menor carga CPU
     PACKET_SIZE = 9000        # Tamaño de paquete jumbo
@@ -21,10 +25,10 @@ class CameraConfig:
     GAIN = 2.0               # Ganancia mínima para mejor calidad
     
     # Configuración del ROI
-    ROI_WIDTH = 1280
-    ROI_HEIGHT = 1024
-    ROI_OFFSET_X = 1416
-    ROI_OFFSET_Y = 576
+    ROI_WIDTH = 640
+    ROI_HEIGHT = 640
+    ROI_OFFSET_X = 1736      # Centrado horizontalmente: (4112 - 640) / 2
+    ROI_OFFSET_Y = 768       # Centrado verticalmente: (2176 - 640) / 2
     
     # Timeouts (en segundos)
     FRAME_TIMEOUT = 0.1       # 100ms timeout para frames
@@ -49,7 +53,7 @@ class ModelsConfig:
     SEGMENTATION_PARTS_MODEL = "CopleSegPz1C1V.onnx"
     
     # Parámetros de inferencia
-    INPUT_SIZE = 1024         # Resolución del modelo (1024x1024)
+    INPUT_SIZE = 640          # Resolución del modelo (640x640)
     CONFIDENCE_THRESHOLD = 0.3
     MAX_DETECTIONS = 10
     
@@ -105,6 +109,9 @@ class GlobalConfig:
     
     # Rutas comunes
     GIGEV_COMMON_PATH = "../gigev_common"
+    
+    # Límites de memoria
+    BUFFER_MARGIN = 8192  # Margen extra para buffers
     
     # Configuración del sistema
     DEBUG_MODE = True
