@@ -206,28 +206,6 @@ El sistema proporciona estadísticas en tiempo real:
 - **Número de frames procesados**
 - **Uso de memoria**
 
-## 🤝 Contribución
-
-Para contribuir al proyecto:
-1. Fork el repositorio
-2. Crea una rama para tu feature
-3. Implementa los cambios
-4. Agrega tests si es necesario
-5. Envía un pull request
-
-## 📄 Licencia
-
-Este proyecto está bajo la licencia [especificar licencia].
-
-## 📞 Soporte
-
-Para soporte técnico o preguntas:
-- Crear un issue en el repositorio
-- Contactar al equipo de desarrollo
-- Revisar la documentación técnica
-
----
-
-**Desarrollado por**: [Tu Nombre/Organización]  
+**Desarrollado por**: [Ernesto Sánchez Céspedes/Controla]  
 **Versión**: 1.0.0  
 **Última actualización**: Septiembre 2025

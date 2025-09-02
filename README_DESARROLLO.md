@@ -302,7 +302,7 @@ print(f"🔍 Debug imagen: shape={frame_rgb.shape}, dtype={frame_rgb.dtype}")
 
 ---
 
-**Desarrollado por**: Equipo de Desarrollo  
+**Desarrollado por**: Equipo de Desarrollo Controla 
 **Versión**: 1.0.0  
 **Última actualización**: Septiembre 2025  
 **Base del proyecto**: Coples-Gigev (implementación probada)
