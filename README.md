@@ -65,6 +65,12 @@ El sistema está configurado para usar cámaras GigE con la siguiente configurac
 
 Para cambiar la configuración, edita `config.py` en la sección `CameraConfig`.
 
+### Implementación
+El sistema utiliza la implementación probada del proyecto `Coples-Gigev` como base, adaptada para:
+- **ROI 640×640** (en lugar de 1280×1024)
+- **Resolución nativa 4112×2176** de la cámara Teledyne DALSA
+- **Formato Bayer RG8** para captura de imágenes
+
 ### Fallback OpenCV
 Si no hay cámara GigE disponible, el sistema automáticamente usará la cámara webcam como fallback.
 
@@ -110,8 +116,8 @@ python main.py
   "timestamp": "2024-12-01T14:30:22.123456",
   "modelo": "CopleClasDef2C1V.onnx",
   "resolucion": {
-    "ancho": 1280,
-    "alto": 1024,
+    "ancho": 640,
+    "alto": 640,
     "canales": 3
   }
 }
@@ -122,9 +128,10 @@ python main.py
 ### Parámetros del modelo
 Edita `config.py` para ajustar:
 - Umbral de confianza
-- Tamaño de entrada del modelo (640x640)
+- Tamaño de entrada del modelo (640×640)
 - Proveedores ONNX
 - Configuración de threads
+- Formato de pixel Bayer RG8
 
 ### Parámetros de cámara
 - Tiempo de exposición
@@ -133,12 +140,13 @@ Edita `config.py` para ajustar:
 - Configuración de buffers
 
 ### Configuración del ROI
-El sistema utiliza un ROI (Region of Interest) de 640x640 píxeles centrado en la imagen nativa de 4112x2176:
-- **Resolución nativa**: 4112x2176 píxeles
-- **ROI activo**: 640x640 píxeles
+El sistema utiliza un ROI (Region of Interest) de 640×640 píxeles centrado en la imagen nativa de 4112×2176:
+- **Resolución nativa**: 4112×2176 píxeles
+- **ROI activo**: 640×640 píxeles
 - **Offset X**: 1736 píxeles (centrado horizontalmente)
 - **Offset Y**: 768 píxeles (centrado verticalmente)
 - **Área de captura**: Centro de la imagen para máxima calidad
+- **Formato de pixel**: Bayer RG8 (8 bits por canal)
 
 ### Visualización
 - Colores de etiquetas
@@ -184,9 +192,10 @@ pip install onnxruntime
 - Revisa permisos de archivo
 
 ### Rendimiento lento
-- Reduce la resolución de entrada
-- Ajusta el framerate de la cámara
+- Reduce la resolución de entrada (actualmente 640×640)
+- Ajusta el framerate de la cámara (actualmente 10 FPS)
 - Optimiza la configuración de threads ONNX
+- Verifica la configuración de buffers GigE
 
 ## 📈 Monitoreo y Estadísticas
 
@@ -221,4 +230,4 @@ Para soporte técnico o preguntas:
 
 **Desarrollado por**: [Tu Nombre/Organización]  
 **Versión**: 1.0.0  
-**Última actualización**: Diciembre 2024
+**Última actualización**: Septiembre 2025
