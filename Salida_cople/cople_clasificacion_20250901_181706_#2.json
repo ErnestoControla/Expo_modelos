@@ -1,0 +1,15 @@
+{
+  "archivo_imagen": "cople_clasificacion_20250901_181706_#2.jpg",
+  "clase_predicha": "Rechazado",
+  "confianza": 0.9688699841499329,
+  "tiempo_captura_ms": 0.15044212341308594,
+  "tiempo_inferencia_ms": 40.840864181518555,
+  "tiempo_total_ms": 40.99130630493164,
+  "timestamp": "2025-09-01T18:17:06.974186",
+  "modelo": "CopleClasDef2C1V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  }
+}

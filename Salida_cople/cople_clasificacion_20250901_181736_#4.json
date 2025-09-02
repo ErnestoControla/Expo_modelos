@@ -1,0 +1,15 @@
+{
+  "archivo_imagen": "cople_clasificacion_20250901_181736_#4.jpg",
+  "clase_predicha": "Aceptado",
+  "confianza": 1.0,
+  "tiempo_captura_ms": 0.1747608184814453,
+  "tiempo_inferencia_ms": 38.43379020690918,
+  "tiempo_total_ms": 38.608551025390625,
+  "timestamp": "2025-09-01T18:17:36.731843",
+  "modelo": "CopleClasDef2C1V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  }
+}
