@@ -19,14 +19,15 @@ from utils import (
 )
 from modules.capture import CamaraTiempoOptimizada
 from modules.classification import ClasificadorCoplesONNX, ProcesadorImagenClasificacion
+from modules.analysis_system import SistemaAnalisisIntegrado
 
 
 class SistemaAnalisisCoples:
     """
     Sistema principal de análisis de coples.
     
-    Integra el controlador de cámara y el clasificador para proporcionar
-    una interfaz completa de captura y clasificación de imágenes.
+    Integra el controlador de cámara, clasificador y detector para proporcionar
+    una interfaz completa de captura, clasificación y detección de imágenes.
     """
     
     def __init__(self, ip_camara=None, modelo_path=None):
@@ -37,6 +38,10 @@ class SistemaAnalisisCoples:
             ip_camara (str, optional): IP de la cámara
             modelo_path (str, optional): Ruta del modelo ONNX
         """
+        # Sistema integrado (clasificación + detección)
+        self.sistema_integrado = SistemaAnalisisIntegrado()
+        
+        # Sistema original (solo clasificación) - para compatibilidad
         self.camara = CamaraTiempoOptimizada(ip=ip_camara)
         self.clasificador = ClasificadorCoplesONNX(model_path=modelo_path)
         self.procesador_imagen = ProcesadorImagenClasificacion()
@@ -60,26 +65,16 @@ class SistemaAnalisisCoples:
         if not verificar_dependencias():
             return False
         
-        # Verificar modelo
-        if not verificar_archivo_modelo(self.clasificador.model_path):
+        # Inicializar sistema integrado
+        print("\n🔧 Inicializando sistema integrado...")
+        if not self.sistema_integrado.inicializar():
+            print("❌ Error inicializando sistema integrado")
             return False
         
-        # Configurar la cámara
-        print("\n📷 Configurando cámara...")
-        if not self.camara.configurar_camara():
-            print("❌ Error configurando la cámara")
-            return False
-        
-        # Inicializar clasificador
-        print("\n🧠 Inicializando motor de clasificación...")
-        if not self.clasificador.inicializar():
-            print("❌ Error inicializando clasificador de coples ONNX")
-            return False
-        
-        # Iniciar captura continua
-        print("\n🎯 Iniciando captura continua...")
-        if not self.camara.iniciar_captura_continua():
-            print("❌ Error iniciando captura continua")
+        # El sistema integrado ya maneja todo, no necesitamos duplicar
+        # Solo verificar que esté funcionando
+        if not self.sistema_integrado.inicializado:
+            print("❌ Sistema integrado no está inicializado")
             return False
         
         self.inicializado = True
@@ -215,15 +210,206 @@ class SistemaAnalisisCoples:
 def mostrar_menu():
     """Muestra el menú de opciones disponibles."""
     print("\n" + "="*60)
-    print("🎯 COMANDOS DISPONIBLES:")
+    print("🎯 ANÁLISIS DISPONIBLE:")
     print("="*60)
-    print("  ENTER - Capturar imagen y clasificar coples")
-    print("  'v'   - Solo ver frame (sin clasificar)")
-    print("  's'   - Mostrar estadísticas del sistema")
-    print("  'c'   - Mostrar configuración completa")
-    print("  't'   - Cambiar umbral de confianza")
-    print("  'q'   - Salir del sistema")
+    print("  1. Análisis Completo (Clasificación + Detección)")
+    print("  2. Solo Clasificación")
+    print("  3. Solo Detección de Piezas")
+    print("  4. Solo Ver Frame")
+    print("  5. Estadísticas del Sistema")
+    print("  6. Configuración")
+    print("  7. Salir del Sistema")
     print("="*60)
+    print("  ENTER - Opción 1 (Análisis Completo)")
+    print("  '2'   - Solo Clasificación")
+    print("  '3'   - Solo Detección")
+    print("  'v'   - Solo Ver Frame")
+    print("  's'   - Estadísticas")
+    print("  'c'   - Configuración")
+    print("  'q'   - Salir")
+    print("="*60)
+
+
+def procesar_comando_analisis_completo(sistema, ventana_cv):
+    """
+    Procesa el comando de análisis completo (clasificación + detección).
+    
+    Args:
+        sistema (SistemaAnalisisCoples): Sistema principal
+        ventana_cv (str): Nombre de la ventana OpenCV
+    """
+    print("\n🔍 REALIZANDO ANÁLISIS COMPLETO...")
+    
+    # Usar sistema integrado para análisis completo
+    resultados = sistema.sistema_integrado.analisis_completo()
+    
+    if "error" in resultados:
+        print(f"❌ Error en análisis completo: {resultados['error']}")
+        return True
+    
+    # Mostrar resultados de clasificación
+    if "clasificacion" in resultados:
+        clasificacion = resultados["clasificacion"]
+        print(f"\n🎯 CLASIFICACIÓN:")
+        print(f"   Clase:      {clasificacion['clase']}")
+        print(f"   Confianza:  {clasificacion['confianza']:.2%}")
+        
+        if "aceptado" in clasificacion['clase'].lower():
+            print(f"   Estado:     ✅ ACEPTADO")
+        elif "rechazado" in clasificacion['clase'].lower():
+            print(f"   Estado:     ❌ RECHAZADO")
+        else:
+            print(f"   Estado:     ❓ DESCONOCIDO")
+    
+    # Mostrar resultados de detección
+    if "detecciones" in resultados:
+        detecciones = resultados["detecciones"]
+        print(f"\n🎯 DETECCIÓN DE PIEZAS:")
+        print(f"   Piezas detectadas: {len(detecciones)}")
+        
+        for i, deteccion in enumerate(detecciones):
+            bbox = deteccion["bbox"]
+            centroide = deteccion["centroide"]
+            print(f"   Pieza #{i+1}: {deteccion['clase']} - {deteccion['confianza']:.2%}")
+            print(f"     BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
+            print(f"     Centroide: ({centroide['x']}, {centroide['y']})")
+    
+    # Mostrar tiempos
+    if "tiempos" in resultados:
+        tiempos = resultados["tiempos"]
+        print(f"\n⏱️  TIEMPOS:")
+        print(f"   Captura:      {tiempos.get('captura_ms', 0):.2f} ms")
+        print(f"   Clasificación: {tiempos.get('clasificacion_ms', 0):.2f} ms")
+        print(f"   Detección:     {tiempos.get('deteccion_ms', 0):.2f} ms")
+        print(f"   Total:         {tiempos.get('total_ms', 0):.2f} ms")
+    
+    print("=" * 60)
+    
+    # Mostrar imagen con detecciones (si hay)
+    if "frame" in resultados and "detecciones" in resultados:
+        frame = resultados["frame"]
+        detecciones = resultados["detecciones"]
+        
+        # Crear imagen anotada con detecciones
+        procesador_deteccion = sistema.sistema_integrado.procesador_deteccion
+        frame_anotado = procesador_deteccion.dibujar_detecciones(frame, detecciones)
+        frame_anotado = procesador_deteccion.agregar_informacion_tiempo(frame_anotado, resultados["tiempos"])
+        
+        # Mostrar imagen
+        cv2.imshow(ventana_cv, frame_anotado)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return False
+    
+    return True
+
+
+def procesar_comando_solo_clasificacion(sistema, ventana_cv):
+    """
+    Procesa el comando de solo clasificación.
+    
+    Args:
+        sistema (SistemaAnalisisCoples): Sistema principal
+        ventana_cv (str): Nombre de la ventana OpenCV
+    """
+    print("\n🧠 REALIZANDO SOLO CLASIFICACIÓN...")
+    
+    # Usar sistema integrado para solo clasificación
+    resultados = sistema.sistema_integrado.solo_clasificacion()
+    
+    if "error" in resultados:
+        print(f"❌ Error en clasificación: {resultados['error']}")
+        return True
+    
+    # Mostrar resultados
+    if "clasificacion" in resultados:
+        clasificacion = resultados["clasificacion"]
+        print(f"\n🎯 CLASIFICACIÓN:")
+        print(f"   Clase:      {clasificacion['clase']}")
+        print(f"   Confianza:  {clasificacion['confianza']:.2%}")
+        
+        if "aceptado" in clasificacion['clase'].lower():
+            print(f"   Estado:     ✅ ACEPTADO")
+        elif "rechazado" in clasificacion['clase'].lower():
+            print(f"   Estado:     ❌ RECHAZADO")
+        else:
+            print(f"   Estado:     ❓ DESCONOCIDO")
+    
+    # Mostrar tiempos
+    if "tiempos" in resultados:
+        tiempos = resultados["tiempos"]
+        print(f"\n⏱️  TIEMPOS:")
+        print(f"   Captura:      {tiempos.get('captura_ms', 0):.2f} ms")
+        print(f"   Clasificación: {tiempos.get('clasificacion_ms', 0):.2f} ms")
+        print(f"   Total:         {tiempos.get('total_ms', 0):.2f} ms")
+    
+    print("=" * 60)
+    
+    # Mostrar imagen
+    if "frame" in resultados:
+        frame = resultados["frame"]
+        cv2.imshow(ventana_cv, frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return False
+    
+    return True
+
+
+def procesar_comando_solo_deteccion(sistema, ventana_cv):
+    """
+    Procesa el comando de solo detección de piezas.
+    
+    Args:
+        sistema (SistemaAnalisisCoples): Sistema principal
+        ventana_cv (str): Nombre de la ventana OpenCV
+    """
+    print("\n🎯 REALIZANDO SOLO DETECCIÓN DE PIEZAS...")
+    
+    # Usar sistema integrado para solo detección
+    resultados = sistema.sistema_integrado.solo_deteccion()
+    
+    if "error" in resultados:
+        print(f"❌ Error en detección: {resultados['error']}")
+        return True
+    
+    # Mostrar resultados
+    if "detecciones" in resultados:
+        detecciones = resultados["detecciones"]
+        print(f"\n🎯 DETECCIÓN DE PIEZAS:")
+        print(f"   Piezas detectadas: {len(detecciones)}")
+        
+        for i, deteccion in enumerate(detecciones):
+            bbox = deteccion["bbox"]
+            centroide = deteccion["centroide"]
+            print(f"   Pieza #{i+1}: {deteccion['clase']} - {deteccion['confianza']:.2%}")
+            print(f"     BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
+            print(f"     Centroide: ({centroide['x']}, {centroide['y']})")
+    
+    # Mostrar tiempos
+    if "tiempos" in resultados:
+        tiempos = resultados["tiempos"]
+        print(f"\n⏱️  TIEMPOS:")
+        print(f"   Captura:   {tiempos.get('captura_ms', 0):.2f} ms")
+        print(f"   Detección: {tiempos.get('deteccion_ms', 0):.2f} ms")
+        print(f"   Total:     {tiempos.get('total_ms', 0):.2f} ms")
+    
+    print("=" * 60)
+    
+    # Mostrar imagen con detecciones
+    if "frame" in resultados and "detecciones" in resultados:
+        frame = resultados["frame"]
+        detecciones = resultados["detecciones"]
+        
+        # Crear imagen anotada con detecciones
+        procesador_deteccion = sistema.sistema_integrado.procesador_deteccion
+        frame_anotado = procesador_deteccion.dibujar_detecciones(frame, detecciones)
+        frame_anotado = procesador_deteccion.agregar_informacion_tiempo(frame_anotado, resultados["tiempos"])
+        
+        # Mostrar imagen
+        cv2.imshow(ventana_cv, frame_anotado)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return False
+    
+    return True
 
 
 def procesar_comando_clasificacion(sistema, ventana_cv):
@@ -404,9 +590,19 @@ def main():
                 if not procesar_comando_ver(sistema, ventana_cv):
                     break
             
-            elif entrada == '':
-                # Comando de captura (ENTER)
-                if not procesar_comando_clasificacion(sistema, ventana_cv):
+            elif entrada == '1' or entrada == '':
+                # Comando de análisis completo (ENTER o '1')
+                if not procesar_comando_analisis_completo(sistema, ventana_cv):
+                    break
+            
+            elif entrada == '2':
+                # Solo Clasificación
+                if not procesar_comando_solo_clasificacion(sistema, ventana_cv):
+                    break
+            
+            elif entrada == '3':
+                # Solo Detección
+                if not procesar_comando_solo_deteccion(sistema, ventana_cv):
                     break
             
             elif entrada == 'help' or entrada == 'h':
@@ -422,6 +618,11 @@ def main():
         # Limpieza final
         print("\n🧹 Limpiando recursos...")
         try:
+            # Liberar sistema integrado
+            if hasattr(sistema, 'sistema_integrado'):
+                sistema.sistema_integrado.liberar()
+            
+            # Liberar sistema original
             sistema.liberar()
         except:
             pass
