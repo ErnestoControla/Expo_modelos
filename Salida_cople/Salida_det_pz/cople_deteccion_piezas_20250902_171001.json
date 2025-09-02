@@ -1,0 +1,54 @@
+{
+  "archivo_imagen": "cople_deteccion_piezas_20250902_171001.jpg",
+  "tipo_analisis": "deteccion_piezas",
+  "timestamp": "2025-09-02T17:10:01.996348",
+  "modelo": "CopleDetPz1C1V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  },
+  "piezas_detectadas": [
+    {
+      "clase": "Cople",
+      "confianza": 115.12693786621094,
+      "bbox": {
+        "x1": 42,
+        "y1": 84,
+        "x2": 102,
+        "y2": 110
+      },
+      "centroide": {
+        "x": 72,
+        "y": 97
+      },
+      "area": 1560
+    },
+    {
+      "clase": "Cople",
+      "confianza": 38.212562561035156,
+      "bbox": {
+        "x1": 12,
+        "y1": 21,
+        "x2": 27,
+        "y2": 33
+      },
+      "centroide": {
+        "x": 19,
+        "y": 27
+      },
+      "area": 180
+    }
+  ],
+  "tiempos": {
+    "captura_ms": 0.3509521484375,
+    "deteccion_ms": 113.22855949401855,
+    "total_ms": 113.22927474975586
+  },
+  "estadisticas": {
+    "total_piezas": 2,
+    "confianza_promedio": 76.66975021362305,
+    "confianza_maxima": 115.12693786621094,
+    "confianza_minima": 38.212562561035156
+  }
+}

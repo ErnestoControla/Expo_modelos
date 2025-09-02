@@ -23,7 +23,7 @@ class DetectorCoplesONNX:
     Basado en el motor de clasificación pero adaptado para detección
     """
     
-    def __init__(self, modelo_path: str, clases_path: str, confianza_min: float = 0.3):
+    def __init__(self, modelo_path: str, clases_path: str, confianza_min: float = 0.5):
         """
         Inicializa el detector ONNX
         
@@ -166,7 +166,7 @@ class DetectorCoplesONNX:
     
     def _procesar_salidas(self, outputs: List[np.ndarray], imagen_shape: Tuple[int, int]) -> List[Dict]:
         """
-        Procesa las salidas del modelo ONNX
+        Procesa las salidas del modelo ONNX en formato estándar YOLO
         
         Args:
             outputs: Lista de arrays de salida del modelo
@@ -178,26 +178,49 @@ class DetectorCoplesONNX:
         detecciones = []
         
         try:
-            # Asumiendo que el primer output es el array de detecciones
-            # Formato esperado: [batch, num_detections, 6] donde 6 = [x1, y1, x2, y2, conf, class_id]
+            # Debug: Mostrar información de las salidas
+            print(f"🔍 Debug detección - Outputs shapes: {[out.shape for out in outputs]}")
+            
+            # Formato estándar YOLO: [batch, num_detections, 6]
+            # Donde 6 = [x1, y1, x2, y2, conf, class_id]
             detections_array = outputs[0]
             
             if len(detections_array.shape) == 3:
                 detections_array = detections_array[0]  # Remover batch dimension
             
+            print(f"🔍 Debug detección - Detections array shape: {detections_array.shape}")
+            
+            # Verificar que el formato sea el esperado
+            if detections_array.shape[1] != 6:
+                print(f"⚠️ Formato inesperado: esperado 6 columnas, obtenido {detections_array.shape[1]}")
+                print(f"   Intentando procesar como formato estándar...")
+            
             # Procesar cada detección
-            for detection in detections_array:
+            for i, detection in enumerate(detections_array):
                 if len(detection) >= 6:
                     x1, y1, x2, y2, conf, class_id = detection[:6]
                     
-                    # Filtrar por confianza
+                    # Debug: Mostrar detección cruda
+                    print(f"🔍 Detección {i}: x1={x1:.2f}, y1={y1:.2f}, x2={x2:.2f}, y2={y2:.2f}, conf={conf:.4f}, class_id={class_id:.2f}")
+                    
+                    # Filtrar por confianza (50% = 0.5)
                     if conf >= self.confianza_min:
+                        # Validar coordenadas del bounding box
+                        if x1 >= x2 or y1 >= y2:
+                            print(f"⚠️ Bounding box inválido en detección {i}: ({x1:.2f},{y1:.2f}) a ({x2:.2f},{y2:.2f})")
+                            continue
+                        
                         # Convertir coordenadas a enteros
                         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
                         class_id = int(class_id)
                         
-                        # Obtener nombre de clase
-                        clase = self.clases[class_id] if class_id < len(self.clases) else f"Clase_{class_id}"
+                        # Validar que las coordenadas estén dentro de la imagen
+                        if x1 < 0 or y1 < 0 or x2 > imagen_shape[1] or y2 > imagen_shape[0]:
+                            print(f"⚠️ Bounding box fuera de imagen en detección {i}: ({x1},{y1}) a ({x2},{y2})")
+                            continue
+                        
+                        # Obtener nombre de clase (solo tenemos 1 clase: "Cople")
+                        clase = "Cople"  # Forzar clase única
                         
                         # Calcular centroide
                         centroide_x = (x1 + x2) // 2
@@ -205,6 +228,11 @@ class DetectorCoplesONNX:
                         
                         # Calcular área
                         area = (x2 - x1) * (y2 - y1)
+                        
+                        # Validar área mínima
+                        if area < 10:  # Área mínima de 10 píxeles
+                            print(f"⚠️ Área muy pequeña en detección {i}: {area} píxeles")
+                            continue
                         
                         # Crear detección
                         deteccion = {
@@ -222,12 +250,15 @@ class DetectorCoplesONNX:
                         }
                         
                         detecciones.append(deteccion)
+                        print(f"✅ Detección {i} válida: {clase} - {conf:.2%} - BBox: ({x1},{y1}) a ({x2},{y2}) - Área: {area}")
             
             # Ordenar por confianza (mayor a menor)
             detecciones.sort(key=lambda x: x["confianza"], reverse=True)
             
+            print(f"🎯 Total detecciones válidas: {len(detecciones)}")
+            
         except Exception as e:
-            print(f"⚠️ Error procesando salidas del modelo: {e}")
+            print(f"❌ Error procesando salidas del modelo: {e}")
             print(f"   Formato de salida: {[out.shape for out in outputs]}")
         
         return detecciones
@@ -255,7 +286,7 @@ class DetectorPiezasCoples(DetectorCoplesONNX):
     Usa el modelo CopleDetPz1C1V.onnx
     """
     
-    def __init__(self, confianza_min: float = 0.3):
+    def __init__(self, confianza_min: float = 0.5):
         """
         Inicializa detector de piezas de coples
         

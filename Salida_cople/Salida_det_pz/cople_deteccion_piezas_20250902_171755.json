@@ -1,0 +1,23 @@
+{
+  "archivo_imagen": "cople_deteccion_piezas_20250902_171755.jpg",
+  "tipo_analisis": "deteccion_piezas",
+  "timestamp": "2025-09-02T17:17:55.263111",
+  "modelo": "CopleDetPz1C1V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  },
+  "piezas_detectadas": [],
+  "tiempos": {
+    "captura_ms": 0.2002716064453125,
+    "deteccion_ms": 202.6383876800537,
+    "total_ms": 202.64339447021484
+  },
+  "estadisticas": {
+    "total_piezas": 0,
+    "confianza_promedio": 0,
+    "confianza_maxima": 0,
+    "confianza_minima": 0
+  }
+}

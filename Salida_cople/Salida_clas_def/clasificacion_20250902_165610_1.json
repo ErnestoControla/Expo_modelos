@@ -1,0 +1,21 @@
+{
+  "archivo_imagen": "clasificacion_20250902_165610_1.jpg",
+  "tipo_analisis": "clasificacion_defectos",
+  "timestamp_captura": "20250902_165610",
+  "clasificacion": {
+    "clase": "Aceptado",
+    "confianza": 1.0,
+    "tiempo_inferencia": 82.33475685119629
+  },
+  "tiempos": {
+    "captura_ms": 0.5762577056884766,
+    "clasificacion_ms": 82.60941505432129,
+    "total_ms": 82.6101303100586
+  },
+  "modelo": "CopleClasDef2C1V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  }
+}

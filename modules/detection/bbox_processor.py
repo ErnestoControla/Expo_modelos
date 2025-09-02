@@ -43,6 +43,8 @@ class ProcesadorBoundingBoxes:
         """
         imagen_anotada = imagen.copy()
         
+        print(f"🎨 Dibujando {len(detecciones)} detecciones...")
+        
         for i, deteccion in enumerate(detecciones):
             # Obtener información de la detección
             bbox = deteccion["bbox"]
@@ -50,19 +52,34 @@ class ProcesadorBoundingBoxes:
             confianza = deteccion["confianza"]
             centroide = deteccion["centroide"]
             
+            # Validar bounding box
+            x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
+            
+            # Verificar que las coordenadas sean válidas
+            if x1 >= x2 or y1 >= y2:
+                print(f"⚠️ Bounding box inválido para detección {i}: ({x1},{y1}) a ({x2},{y2})")
+                continue
+            
+            # Verificar que esté dentro de la imagen
+            if x1 < 0 or y1 < 0 or x2 > imagen.shape[1] or y2 > imagen.shape[0]:
+                print(f"⚠️ Bounding box fuera de imagen para detección {i}: ({x1},{y1}) a ({x2},{y2})")
+                continue
+            
+            print(f"🎨 Dibujando detección {i+1}: {clase} en ({x1},{y1}) a ({x2},{y2})")
+            
             # Obtener color para la clase
             color = self.colores_clases.get(clase, self.colores_clases["default"])
             
             # Dibujar bounding box
-            x1, y1, x2, y2 = bbox["x1"], bbox["y1"], bbox["x2"], bbox["y2"]
             cv2.rectangle(imagen_anotada, (x1, y1), (x2, y2), color, self.grosor_linea)
             
             # Dibujar centroide
             cx, cy = centroide["x"], centroide["y"]
             cv2.circle(imagen_anotada, (cx, cy), 3, color, -1)
             
-            # Preparar texto de etiqueta
-            texto_etiqueta = f"{clase}: {confianza:.2f}"
+            # Preparar texto de etiqueta (mostrar confianza como porcentaje)
+            confianza_porcentaje = min(confianza, 1.0) * 100  # Limitar a 100%
+            texto_etiqueta = f"{clase}: {confianza_porcentaje:.1f}%"
             
             # Calcular posición del texto
             (texto_ancho, texto_alto), _ = cv2.getTextSize(
@@ -186,7 +203,8 @@ class ProcesadorBoundingBoxes:
     
     def guardar_resultado_deteccion(self, imagen: np.ndarray, detecciones: List[Dict], 
                                    tiempos: Dict, directorio_salida: str, 
-                                   prefijo: str = "cople_deteccion") -> Tuple[str, str]:
+                                   prefijo: str = "cople_deteccion", 
+                                   timestamp_captura: str = None) -> Tuple[str, str]:
         """
         Guarda la imagen anotada y los metadatos JSON
         
@@ -196,12 +214,16 @@ class ProcesadorBoundingBoxes:
             tiempos: Diccionario con tiempos
             directorio_salida: Directorio donde guardar
             prefijo: Prefijo para el nombre del archivo
+            timestamp_captura: Timestamp único de la captura
             
         Returns:
             Tupla con (ruta_imagen, ruta_json)
         """
-        # Crear timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Usar timestamp de captura si está disponible, sino crear uno nuevo
+        if timestamp_captura:
+            timestamp = timestamp_captura
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # Nombre del archivo
         nombre_base = f"{prefijo}_{timestamp}"
@@ -288,7 +310,8 @@ class ProcesadorPiezasCoples(ProcesadorBoundingBoxes):
         })
     
     def procesar_deteccion_piezas(self, imagen: np.ndarray, detecciones: List[Dict], 
-                                  tiempos: Dict, directorio_salida: str) -> Tuple[str, str]:
+                                  tiempos: Dict, directorio_salida: str, 
+                                  timestamp_captura: str = None) -> Tuple[str, str]:
         """
         Procesa y guarda detección de piezas de coples
         
@@ -297,6 +320,7 @@ class ProcesadorPiezasCoples(ProcesadorBoundingBoxes):
             detecciones: Lista de detecciones
             tiempos: Diccionario con tiempos
             directorio_salida: Directorio de salida
+            timestamp_captura: Timestamp único de la captura
             
         Returns:
             Tupla con (ruta_imagen, ruta_json)
@@ -310,5 +334,5 @@ class ProcesadorPiezasCoples(ProcesadorBoundingBoxes):
         # Guardar resultado
         return self.guardar_resultado_deteccion(
             imagen_anotada, detecciones, tiempos, 
-            directorio_salida, "cople_deteccion_piezas"
+            directorio_salida, "cople_deteccion_piezas", timestamp_captura
         )

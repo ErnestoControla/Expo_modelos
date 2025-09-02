@@ -6,6 +6,7 @@ Combina clasificación y detección en un solo pipeline
 import numpy as np
 import cv2
 import time
+import json
 from typing import Dict, List, Tuple, Optional
 import os
 import sys
@@ -37,12 +38,19 @@ class SistemaAnalisisIntegrado:
         self.inicializado = False
         self.contador_resultados = 0
         
-        # Directorio de salida
-        self.directorio_salida = "Salida_cople"
+        # Directorios de salida por módulo
+        self.directorios_salida = {
+            "clasificacion": "Salida_cople/Salida_clas_def",
+            "deteccion_piezas": "Salida_cople/Salida_det_pz",
+            "deteccion_defectos": "Salida_cople/Salida_det_def",
+            "segmentacion_defectos": "Salida_cople/Salida_seg_def",
+            "segmentacion_piezas": "Salida_cople/Salida_seg_pz"
+        }
         
-        # Crear directorio si no existe
-        if not os.path.exists(self.directorio_salida):
-            os.makedirs(self.directorio_salida)
+        # Crear directorios si no existen
+        for directorio in self.directorios_salida.values():
+            if not os.path.exists(directorio):
+                os.makedirs(directorio)
     
     def inicializar(self) -> bool:
         """
@@ -88,6 +96,49 @@ class SistemaAnalisisIntegrado:
             print(f"❌ Error inicializando sistema: {e}")
             return False
     
+    def capturar_imagen_unica(self) -> Dict:
+        """
+        Captura una sola imagen para procesamiento por módulos
+        
+        Returns:
+            Diccionario con la imagen capturada y metadatos
+        """
+        if not self.inicializado:
+            return {"error": "Sistema no inicializado"}
+        
+        try:
+            tiempo_inicio = time.time()
+            
+            # Capturar imagen
+            resultado_captura = self.camara.obtener_frame_instantaneo()
+            if resultado_captura is None or resultado_captura[0] is None:
+                return {"error": "No se pudo capturar imagen"}
+            
+            # resultado_captura es una tupla: (frame, tiempo_acceso_ms, timestamp)
+            frame, tiempo_acceso_ms, timestamp = resultado_captura
+            
+            tiempo_captura = (time.time() - tiempo_inicio) * 1000
+            
+            # Crear timestamp único para esta captura
+            timestamp_captura = time.strftime("%Y%m%d_%H%M%S")
+            
+            resultados = {
+                "frame": frame,
+                "timestamp_captura": timestamp_captura,
+                "tiempos": {
+                    "captura_ms": tiempo_captura,
+                    "tiempo_acceso_ms": tiempo_acceso_ms
+                },
+                "timestamp_original": timestamp
+            }
+            
+            print(f"📷 Imagen capturada: {timestamp_captura}")
+            return resultados
+            
+        except Exception as e:
+            print(f"❌ Error capturando imagen: {e}")
+            return {"error": str(e)}
+    
     def analisis_completo(self) -> Dict:
         """
         Realiza análisis completo: clasificación + detección
@@ -99,18 +150,16 @@ class SistemaAnalisisIntegrado:
             return {"error": "Sistema no inicializado"}
         
         try:
+            # 1. Capturar imagen única
+            resultado_captura = self.capturar_imagen_unica()
+            if "error" in resultado_captura:
+                return resultado_captura
+            
+            frame = resultado_captura["frame"]
+            timestamp_captura = resultado_captura["timestamp_captura"]
+            tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
+            
             tiempo_inicio = time.time()
-            
-            # 1. Capturar imagen
-            tiempo_captura_inicio = time.time()
-            resultado_captura = self.camara.obtener_frame_instantaneo()
-            if resultado_captura is None or resultado_captura[0] is None:
-                return {"error": "No se pudo capturar imagen"}
-            
-            # resultado_captura es una tupla: (frame, tiempo_acceso_ms, timestamp)
-            frame, tiempo_acceso_ms, timestamp = resultado_captura
-            
-            tiempo_captura = (time.time() - tiempo_captura_inicio) * 1000
             
             # 2. Clasificación
             tiempo_clasificacion_inicio = time.time()
@@ -142,11 +191,12 @@ class SistemaAnalisisIntegrado:
                     "deteccion_ms": tiempo_deteccion,
                     "total_ms": tiempo_total
                 },
-                "frame": frame
+                "frame": frame,
+                "timestamp_captura": timestamp_captura
             }
             
-            # 6. Guardar resultados
-            self._guardar_analisis_completo(resultados)
+            # 6. Guardar resultados por módulo
+            self._guardar_por_modulos(resultados)
             
             return resultados
             
@@ -165,18 +215,16 @@ class SistemaAnalisisIntegrado:
             return {"error": "Sistema no inicializado"}
         
         try:
+            # 1. Capturar imagen única
+            resultado_captura = self.capturar_imagen_unica()
+            if "error" in resultado_captura:
+                return resultado_captura
+            
+            frame = resultado_captura["frame"]
+            timestamp_captura = resultado_captura["timestamp_captura"]
+            tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
+            
             tiempo_inicio = time.time()
-            
-            # 1. Capturar imagen
-            tiempo_captura_inicio = time.time()
-            resultado_captura = self.camara.obtener_frame_instantaneo()
-            if resultado_captura is None or resultado_captura[0] is None:
-                return {"error": "No se pudo capturar imagen"}
-            
-            # resultado_captura es una tupla: (frame, tiempo_acceso_ms, timestamp)
-            frame, tiempo_acceso_ms, timestamp = resultado_captura
-            
-            tiempo_captura = (time.time() - tiempo_captura_inicio) * 1000
             
             # 2. Clasificación
             tiempo_clasificacion_inicio = time.time()
@@ -201,11 +249,12 @@ class SistemaAnalisisIntegrado:
                     "clasificacion_ms": tiempo_clasificacion,
                     "total_ms": tiempo_total
                 },
-                "frame": frame
+                "frame": frame,
+                "timestamp_captura": timestamp_captura
             }
             
-            # 5. Guardar resultados
-            self._guardar_solo_clasificacion(resultados)
+            # 5. Guardar resultados por módulo
+            self._guardar_por_modulos(resultados)
             
             return resultados
             
@@ -224,18 +273,16 @@ class SistemaAnalisisIntegrado:
             return {"error": "Sistema no inicializado"}
         
         try:
+            # 1. Capturar imagen única
+            resultado_captura = self.capturar_imagen_unica()
+            if "error" in resultado_captura:
+                return resultado_captura
+            
+            frame = resultado_captura["frame"]
+            timestamp_captura = resultado_captura["timestamp_captura"]
+            tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
+            
             tiempo_inicio = time.time()
-            
-            # 1. Capturar imagen
-            tiempo_captura_inicio = time.time()
-            resultado_captura = self.camara.obtener_frame_instantaneo()
-            if resultado_captura is None or resultado_captura[0] is None:
-                return {"error": "No se pudo capturar imagen"}
-            
-            # resultado_captura es una tupla: (frame, tiempo_acceso_ms, timestamp)
-            frame, tiempo_acceso_ms, timestamp = resultado_captura
-            
-            tiempo_captura = (time.time() - tiempo_captura_inicio) * 1000
             
             # 2. Detección
             tiempo_deteccion_inicio = time.time()
@@ -253,11 +300,12 @@ class SistemaAnalisisIntegrado:
                     "deteccion_ms": tiempo_deteccion,
                     "total_ms": tiempo_total
                 },
-                "frame": frame
+                "frame": frame,
+                "timestamp_captura": timestamp_captura
             }
             
-            # 5. Guardar resultados
-            self._guardar_solo_deteccion(resultados)
+            # 5. Guardar resultados por módulo
+            self._guardar_por_modulos(resultados)
             
             return resultados
             
@@ -265,47 +313,28 @@ class SistemaAnalisisIntegrado:
             print(f"❌ Error en detección: {e}")
             return {"error": str(e)}
     
-    def _guardar_analisis_completo(self, resultados: Dict):
-        """Guarda resultados del análisis completo"""
+    def _guardar_por_modulos(self, resultados: Dict):
+        """Guarda resultados por módulos en carpetas separadas"""
         try:
             self.contador_resultados += 1
+            timestamp_captura = resultados.get("timestamp_captura", "unknown")
             
-            # Guardar clasificación
+            # 1. Guardar clasificación (si existe)
             if "clasificacion" in resultados:
-                # Crear imagen anotada
-                frame_anotado = self.procesador_clasificacion.agregar_anotaciones_clasificacion(
-                    resultados["frame"],
-                    resultados["clasificacion"]["clase"],
-                    resultados["clasificacion"]["confianza"],
-                    resultados["tiempos"]["captura_ms"],
-                    resultados["tiempos"]["clasificacion_ms"]
-                )
-                
-                # Guardar imagen
-                timestamp = time.strftime("%Y%m%d_%H%M%S")
-                nombre_imagen = f"completo_clasificacion_{timestamp}_{self.contador_resultados}.jpg"
-                ruta_imagen = os.path.join(self.directorio_salida, nombre_imagen)
-                cv2.imwrite(ruta_imagen, frame_anotado)
+                self._guardar_clasificacion_modulo(resultados, timestamp_captura)
             
-            # Guardar detección
+            # 2. Guardar detección (si existe)
             if "detecciones" in resultados:
-                self.procesador_deteccion.procesar_deteccion_piezas(
-                    resultados["frame"],
-                    resultados["detecciones"],
-                    resultados["tiempos"],
-                    self.directorio_salida
-                )
+                self._guardar_deteccion_modulo(resultados, timestamp_captura)
             
-            print(f"✅ Análisis completo #{self.contador_resultados} guardado")
+            print(f"✅ Resultados #{self.contador_resultados} guardados por módulos")
             
         except Exception as e:
-            print(f"❌ Error guardando análisis completo: {e}")
+            print(f"❌ Error guardando por módulos: {e}")
     
-    def _guardar_solo_clasificacion(self, resultados: Dict):
-        """Guarda resultados de solo clasificación"""
+    def _guardar_clasificacion_modulo(self, resultados: Dict, timestamp_captura: str):
+        """Guarda resultados de clasificación en su módulo específico"""
         try:
-            self.contador_resultados += 1
-            
             # Crear imagen anotada
             frame_anotado = self.procesador_clasificacion.agregar_anotaciones_clasificacion(
                 resultados["frame"],
@@ -315,30 +344,50 @@ class SistemaAnalisisIntegrado:
                 resultados["tiempos"]["clasificacion_ms"]
             )
             
-            # Guardar imagen
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            nombre_imagen = f"solo_clasificacion_{timestamp}_{self.contador_resultados}.jpg"
-            ruta_imagen = os.path.join(self.directorio_salida, nombre_imagen)
+            # Guardar imagen en módulo de clasificación
+            nombre_imagen = f"clasificacion_{timestamp_captura}_{self.contador_resultados}.jpg"
+            ruta_imagen = os.path.join(self.directorios_salida["clasificacion"], nombre_imagen)
             cv2.imwrite(ruta_imagen, frame_anotado)
             
-            print(f"✅ Clasificación #{self.contador_resultados} guardada")
+            # Crear y guardar JSON de clasificación
+            metadatos_clasificacion = {
+                "archivo_imagen": nombre_imagen,
+                "tipo_analisis": "clasificacion_defectos",
+                "timestamp_captura": timestamp_captura,
+                "clasificacion": resultados["clasificacion"],
+                "tiempos": resultados["tiempos"],
+                "modelo": "CopleClasDef2C1V.onnx",
+                "resolucion": {
+                    "ancho": 640,
+                    "alto": 640,
+                    "canales": 3
+                }
+            }
+            
+            nombre_json = f"clasificacion_{timestamp_captura}_{self.contador_resultados}.json"
+            ruta_json = os.path.join(self.directorios_salida["clasificacion"], nombre_json)
+            
+            with open(ruta_json, 'w', encoding='utf-8') as f:
+                json.dump(metadatos_clasificacion, f, indent=2, ensure_ascii=False)
+            
+            print(f"   📁 Clasificación guardada en: {self.directorios_salida['clasificacion']}")
             
         except Exception as e:
             print(f"❌ Error guardando clasificación: {e}")
     
-    def _guardar_solo_deteccion(self, resultados: Dict):
-        """Guarda resultados de solo detección"""
+    def _guardar_deteccion_modulo(self, resultados: Dict, timestamp_captura: str):
+        """Guarda resultados de detección en su módulo específico"""
         try:
-            self.contador_resultados += 1
-            
+            # Guardar detección en módulo específico
             self.procesador_deteccion.procesar_deteccion_piezas(
                 resultados["frame"],
                 resultados["detecciones"],
                 resultados["tiempos"],
-                self.directorio_salida
+                self.directorios_salida["deteccion_piezas"],
+                timestamp_captura
             )
             
-            print(f"✅ Detección #{self.contador_resultados} guardada")
+            print(f"   📁 Detección guardada en: {self.directorios_salida['deteccion_piezas']}")
             
         except Exception as e:
             print(f"❌ Error guardando detección: {e}")
