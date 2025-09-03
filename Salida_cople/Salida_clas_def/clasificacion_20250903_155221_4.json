@@ -1,0 +1,23 @@
+{
+  "archivo_imagen": "clasificacion_20250903_155221_4.jpg",
+  "tipo_analisis": "clasificacion_defectos",
+  "timestamp_captura": "20250903_155221",
+  "clasificacion": {
+    "clase": "Aceptado",
+    "confianza": 1.0,
+    "tiempo_inferencia": 40.99774360656738
+  },
+  "tiempos": {
+    "captura_ms": 0.2200603485107422,
+    "clasificacion_ms": 41.03708267211914,
+    "deteccion_piezas_ms": 82.69357681274414,
+    "deteccion_defectos_ms": 116.33944511413574,
+    "total_ms": 240.97251892089844
+  },
+  "modelo": "CopleClasDef2C1V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  }
+}

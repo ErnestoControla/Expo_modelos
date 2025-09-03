@@ -1,0 +1,71 @@
+{
+  "archivo_imagen": "cople_deteccion_defectos_20250903_155221.jpg",
+  "tipo_analisis": "deteccion_defectos",
+  "timestamp": "2025-09-03T15:52:21.485081",
+  "modelo": "CopleDetDef1C2V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  },
+  "defectos_detectados": [
+    {
+      "clase": "Cople",
+      "confianza": 0.6839674115180969,
+      "bbox": {
+        "x1": 206,
+        "y1": 176,
+        "x2": 259,
+        "y2": 216
+      },
+      "centroide": {
+        "x": 233,
+        "y": 196
+      },
+      "area": 2122
+    },
+    {
+      "clase": "Cople",
+      "confianza": 0.6794202923774719,
+      "bbox": {
+        "x1": 298,
+        "y1": 147,
+        "x2": 356,
+        "y2": 199
+      },
+      "centroide": {
+        "x": 327,
+        "y": 173
+      },
+      "area": 3002
+    },
+    {
+      "clase": "Cople",
+      "confianza": 0.6638428568840027,
+      "bbox": {
+        "x1": 386,
+        "y1": 329,
+        "x2": 435,
+        "y2": 359
+      },
+      "centroide": {
+        "x": 411,
+        "y": 344
+      },
+      "area": 1465
+    }
+  ],
+  "tiempos": {
+    "captura_ms": 0.2200603485107422,
+    "clasificacion_ms": 41.03708267211914,
+    "deteccion_piezas_ms": 82.69357681274414,
+    "deteccion_defectos_ms": 116.33944511413574,
+    "total_ms": 240.97251892089844
+  },
+  "estadisticas": {
+    "total_defectos": 3,
+    "confianza_promedio": 0.6757435202598572,
+    "confianza_maxima": 0.6839674115180969,
+    "confianza_minima": 0.6638428568840027
+  }
+}

@@ -512,7 +512,7 @@ class SistemaAnalisisIntegrado:
             # Guardar detección de piezas en módulo específico
             self.procesador_deteccion_piezas.procesar_deteccion_piezas(
                 resultados["frame"],
-                resultados["detecciones_piezas"],   |
+                resultados["detecciones_piezas"],   
                 resultados["tiempos"],
                 self.directorios_salida["deteccion_piezas"],
                 timestamp_captura
