@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from modules.capture import CamaraTiempoOptimizada
 from modules.classification import ClasificadorCoplesONNX, ProcesadorImagenClasificacion
-from modules.detection import DetectorPiezasCoples, ProcesadorPiezasCoples
+from modules.detection import DetectorPiezasCoples, ProcesadorPiezasCoples, DetectorDefectosCoples, ProcesadorDefectos
 from config import GlobalConfig
 
 
@@ -30,9 +30,11 @@ class SistemaAnalisisIntegrado:
         # Componentes del sistema
         self.camara = None
         self.clasificador = None
-        self.detector = None
+        self.detector_piezas = None
+        self.detector_defectos = None
         self.procesador_clasificacion = None
-        self.procesador_deteccion = None
+        self.procesador_deteccion_piezas = None
+        self.procesador_deteccion_defectos = None
         
         # Estado del sistema
         self.inicializado = False
@@ -77,12 +79,20 @@ class SistemaAnalisisIntegrado:
                 return False
             self.procesador_clasificacion = ProcesadorImagenClasificacion()
             
-            # 3. Inicializar detector
+            # 3. Inicializar detector de piezas
             print("🎯 Inicializando detector de piezas...")
-            self.detector = DetectorPiezasCoples()
-            self.procesador_deteccion = ProcesadorPiezasCoples()
+            self.detector_piezas = DetectorPiezasCoples()
+            self.procesador_deteccion_piezas = ProcesadorPiezasCoples()
             
-            # 4. Iniciar captura continua
+            # 4. Inicializar detector de defectos
+            print("🎯 Inicializando detector de defectos...")
+            self.detector_defectos = DetectorDefectosCoples()
+            if not self.detector_defectos.inicializar():
+                print("❌ Error inicializando detector de defectos")
+                return False
+            self.procesador_deteccion_defectos = ProcesadorDefectos()
+            
+            # 5. Iniciar captura continua
             print("🎬 Iniciando captura continua...")
             if not self.camara.iniciar_captura_continua():
                 print("❌ Error iniciando captura continua")
@@ -141,7 +151,7 @@ class SistemaAnalisisIntegrado:
     
     def analisis_completo(self) -> Dict:
         """
-        Realiza análisis completo: clasificación + detección
+        Realiza análisis completo: clasificación + detección de manera SECUENCIAL
         
         Returns:
             Diccionario con resultados completos
@@ -150,58 +160,124 @@ class SistemaAnalisisIntegrado:
             return {"error": "Sistema no inicializado"}
         
         try:
-            # 1. Capturar imagen única
+            print("🚀 INICIANDO ANÁLISIS COMPLETO SECUENCIAL...")
+            
+            # 1. Pausar captura continua temporalmente
+            print("⏸️ Pausando captura continua para análisis...")
+            self.camara.pausar_captura_continua()
+            
+            # 2. Capturar imagen única
+            print("📷 Capturando imagen única...")
+            tiempo_captura_inicio = time.time()
             resultado_captura = self.capturar_imagen_unica()
             if "error" in resultado_captura:
+                # Reanudar captura continua en caso de error
+                self.camara.reanudar_captura_continua()
                 return resultado_captura
             
             frame = resultado_captura["frame"]
             timestamp_captura = resultado_captura["timestamp_captura"]
-            tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
+            tiempo_captura = (time.time() - tiempo_captura_inicio) * 1000
+            print(f"✅ Imagen capturada en {tiempo_captura:.2f} ms")
             
-            tiempo_inicio = time.time()
+            # Verificar frame capturado
+            print(f"🔍 DEBUG - Frame capturado:")
+            print(f"   Tipo: {type(frame)}")
+            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
+            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
+            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
+            print(f"   ID del objeto: {id(frame)}")
             
-            # 2. Clasificación
+            tiempo_inicio_total = time.time()
+            
+            # 3. CLASIFICACIÓN (SECUENCIAL)
+            print("\n🧠 EJECUTANDO CLASIFICACIÓN...")
+            print(f"🔍 DEBUG - Frame para clasificación:")
+            print(f"   Tipo: {type(frame)}")
+            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
+            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
+            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
+            
             tiempo_clasificacion_inicio = time.time()
             resultado_clasificacion = self.clasificador.clasificar(frame)
             tiempo_clasificacion = (time.time() - tiempo_clasificacion_inicio) * 1000
-            
-            # 3. Detección
-            tiempo_deteccion_inicio = time.time()
-            detecciones = self.detector.detectar_piezas(frame)
-            tiempo_deteccion = (time.time() - tiempo_deteccion_inicio) * 1000
-            
-            # 4. Calcular tiempo total
-            tiempo_total = (time.time() - tiempo_inicio) * 1000
-            
-            # 5. Crear resultados
-            # resultado_clasificacion es una tupla: (clase, confianza, tiempo_inferencia)
             clase_predicha, confianza, tiempo_inferencia_clas = resultado_clasificacion
+            print(f"✅ Clasificación completada en {tiempo_clasificacion:.2f} ms")
+            print(f"   Resultado: {clase_predicha} ({confianza:.2%})")
+            print(f"   🔍 Frame ID después de clasificación: {id(frame)}")
             
+            # 4. DETECCIÓN DE PIEZAS (SECUENCIAL)
+            print("\n🎯 EJECUTANDO DETECCIÓN DE PIEZAS...")
+            print(f"🔍 DEBUG - Frame para detección de piezas:")
+            print(f"   Tipo: {type(frame)}")
+            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
+            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
+            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
+            
+            tiempo_deteccion_piezas_inicio = time.time()
+            detecciones_piezas = self.detector_piezas.detectar_piezas(frame)
+            tiempo_deteccion_piezas = (time.time() - tiempo_deteccion_piezas_inicio) * 1000
+            print(f"✅ Detección de piezas completada en {tiempo_deteccion_piezas:.2f} ms")
+            print(f"   Piezas detectadas: {len(detecciones_piezas)}")
+            print(f"   🔍 Frame ID después de detección de piezas: {id(frame)}")
+            
+            # 5. DETECCIÓN DE DEFECTOS (SECUENCIAL)
+            print("\n🔍 EJECUTANDO DETECCIÓN DE DEFECTOS...")
+            print(f"🔍 DEBUG - Frame para detección de defectos:")
+            print(f"   Tipo: {type(frame)}")
+            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
+            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
+            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
+            
+            tiempo_deteccion_defectos_inicio = time.time()
+            detecciones_defectos = self.detector_defectos.detectar_defectos(frame)
+            tiempo_deteccion_defectos = (time.time() - tiempo_deteccion_defectos_inicio) * 1000
+            print(f"✅ Detección de defectos completada en {tiempo_deteccion_defectos:.2f} ms")
+            print(f"   Defectos detectados: {len(detecciones_defectos)}")
+            
+            # 6. Calcular tiempo total
+            tiempo_total = (time.time() - tiempo_inicio_total) * 1000
+            
+            # 7. Crear resultados
             resultados = {
                 "clasificacion": {
                     "clase": clase_predicha,
                     "confianza": confianza,
                     "tiempo_inferencia": tiempo_inferencia_clas
                 },
-                "detecciones": detecciones,
+                "detecciones_piezas": detecciones_piezas,
+                "detecciones_defectos": detecciones_defectos,
                 "tiempos": {
                     "captura_ms": tiempo_captura,
                     "clasificacion_ms": tiempo_clasificacion,
-                    "deteccion_ms": tiempo_deteccion,
+                    "deteccion_piezas_ms": tiempo_deteccion_piezas,
+                    "deteccion_defectos_ms": tiempo_deteccion_defectos,
                     "total_ms": tiempo_total
                 },
                 "frame": frame,
                 "timestamp_captura": timestamp_captura
             }
             
-            # 6. Guardar resultados por módulo
+            # 8. Guardar resultados por módulo
+            print("\n💾 GUARDANDO RESULTADOS...")
             self._guardar_por_modulos(resultados)
             
+            # 9. Reanudar captura continua
+            print("▶️ Reanudando captura continua...")
+            self.camara.reanudar_captura_continua()
+            
+            print(f"\n🎉 ANÁLISIS COMPLETO FINALIZADO EN {tiempo_total:.2f} ms")
             return resultados
             
         except Exception as e:
             print(f"❌ Error en análisis completo: {e}")
+            import traceback
+            traceback.print_exc()
+            # Reanudar captura continua en caso de error
+            try:
+                self.camara.reanudar_captura_continua()
+            except:
+                pass
             return {"error": str(e)}
     
     def solo_clasificacion(self) -> Dict:
@@ -284,9 +360,9 @@ class SistemaAnalisisIntegrado:
             
             tiempo_inicio = time.time()
             
-            # 2. Detección
+            # 2. Detección de piezas
             tiempo_deteccion_inicio = time.time()
-            detecciones = self.detector.detectar_piezas(frame)
+            detecciones = self.detector_piezas.detectar_piezas(frame)
             tiempo_deteccion = (time.time() - tiempo_deteccion_inicio) * 1000
             
             # 3. Calcular tiempo total
@@ -310,7 +386,58 @@ class SistemaAnalisisIntegrado:
             return resultados
             
         except Exception as e:
-            print(f"❌ Error en detección: {e}")
+            print(f"❌ Error en detección de piezas: {e}")
+            return {"error": str(e)}
+    
+    def solo_deteccion_defectos(self) -> Dict:
+        """
+        Realiza solo detección de defectos (sin clasificación)
+        
+        Returns:
+            Diccionario con resultados de detección de defectos
+        """
+        if not self.inicializado:
+            return {"error": "Sistema no inicializado"}
+        
+        try:
+            # 1. Capturar imagen única
+            resultado_captura = self.capturar_imagen_unica()
+            if "error" in resultado_captura:
+                return resultado_captura
+            
+            frame = resultado_captura["frame"]
+            timestamp_captura = resultado_captura["timestamp_captura"]
+            tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
+            
+            tiempo_inicio = time.time()
+            
+            # 2. Detección de defectos
+            tiempo_deteccion_inicio = time.time()
+            detecciones_defectos = self.detector_defectos.detectar_defectos(frame)
+            tiempo_deteccion = (time.time() - tiempo_deteccion_inicio) * 1000
+            
+            # 3. Calcular tiempo total
+            tiempo_total = (time.time() - tiempo_inicio) * 1000
+            
+            # 4. Crear resultados
+            resultados = {
+                "detecciones_defectos": detecciones_defectos,
+                "tiempos": {
+                    "captura_ms": tiempo_captura,
+                    "deteccion_defectos_ms": tiempo_deteccion,
+                    "total_ms": tiempo_total
+                },
+                "frame": frame,
+                "timestamp_captura": timestamp_captura
+            }
+            
+            # 5. Guardar resultados por módulo
+            self._guardar_por_modulos(resultados)
+            
+            return resultados
+            
+        except Exception as e:
+            print(f"❌ Error en detección de defectos: {e}")
             return {"error": str(e)}
     
     def _guardar_por_modulos(self, resultados: Dict):
@@ -323,9 +450,13 @@ class SistemaAnalisisIntegrado:
             if "clasificacion" in resultados:
                 self._guardar_clasificacion_modulo(resultados, timestamp_captura)
             
-            # 2. Guardar detección (si existe)
-            if "detecciones" in resultados:
-                self._guardar_deteccion_modulo(resultados, timestamp_captura)
+            # 2. Guardar detección de piezas (si existe)
+            if "detecciones_piezas" in resultados:
+                self._guardar_deteccion_piezas_modulo(resultados, timestamp_captura)
+            
+            # 3. Guardar detección de defectos (si existe)
+            if "detecciones_defectos" in resultados:
+                self._guardar_deteccion_defectos_modulo(resultados, timestamp_captura)
             
             print(f"✅ Resultados #{self.contador_resultados} guardados por módulos")
             
@@ -375,22 +506,39 @@ class SistemaAnalisisIntegrado:
         except Exception as e:
             print(f"❌ Error guardando clasificación: {e}")
     
-    def _guardar_deteccion_modulo(self, resultados: Dict, timestamp_captura: str):
-        """Guarda resultados de detección en su módulo específico"""
+    def _guardar_deteccion_piezas_modulo(self, resultados: Dict, timestamp_captura: str):
+        """Guarda resultados de detección de piezas en su módulo específico"""
         try:
-            # Guardar detección en módulo específico
-            self.procesador_deteccion.procesar_deteccion_piezas(
+            # Guardar detección de piezas en módulo específico
+            self.procesador_deteccion_piezas.procesar_deteccion_piezas(
                 resultados["frame"],
-                resultados["detecciones"],
+                resultados["detecciones_piezas"],   |
                 resultados["tiempos"],
                 self.directorios_salida["deteccion_piezas"],
                 timestamp_captura
             )
             
-            print(f"   📁 Detección guardada en: {self.directorios_salida['deteccion_piezas']}")
+            print(f"   📁 Detección de piezas guardada en: {self.directorios_salida['deteccion_piezas']}")
             
         except Exception as e:
-            print(f"❌ Error guardando detección: {e}")
+            print(f"❌ Error guardando detección de piezas: {e}")
+    
+    def _guardar_deteccion_defectos_modulo(self, resultados: Dict, timestamp_captura: str):
+        """Guarda resultados de detección de defectos en su módulo específico"""
+        try:
+            # Guardar detección de defectos en módulo específico
+            self.procesador_deteccion_defectos.procesar_deteccion_defectos(
+                resultados["frame"],
+                resultados["detecciones_defectos"],
+                resultados["tiempos"],
+                self.directorios_salida["deteccion_defectos"],
+                timestamp_captura
+            )
+            
+            print(f"   📁 Detección de defectos guardada en: {self.directorios_salida['deteccion_defectos']}")
+            
+        except Exception as e:
+            print(f"❌ Error guardando detección de defectos: {e}")
     
     def obtener_estadisticas(self) -> Dict:
         """Retorna estadísticas del sistema"""
@@ -398,11 +546,12 @@ class SistemaAnalisisIntegrado:
             return {"error": "Sistema no inicializado"}
         
         stats = {
-            "sistema": "Integrado (Clasificación + Detección)",
+            "sistema": "Integrado (Clasificación + Detección de Piezas + Detección de Defectos)",
             "resultados_procesados": self.contador_resultados,
             "camara": self.camara.obtener_estadisticas() if self.camara else {},
             "clasificador": self.clasificador.obtener_estadisticas() if self.clasificador else {},
-            "detector": self.detector.obtener_estadisticas() if self.detector else {}
+            "detector_piezas": self.detector_piezas.obtener_estadisticas() if self.detector_piezas else {},
+            "detector_defectos": self.detector_defectos.obtener_estadisticas() if self.detector_defectos else {}
         }
         
         return stats
@@ -418,8 +567,11 @@ class SistemaAnalisisIntegrado:
             if self.clasificador:
                 self.clasificador.liberar()
             
-            if self.detector:
-                self.detector.liberar()
+            if self.detector_piezas:
+                self.detector_piezas.liberar()
+            
+            if self.detector_defectos:
+                self.detector_defectos.liberar()
             
             self.inicializado = False
             print("✅ Recursos del sistema integrado liberados")

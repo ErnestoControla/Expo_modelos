@@ -75,6 +75,7 @@ class CamaraTiempoOptimizada:
         self.frame_ready_event = Event()    # Señal de frame listo
         self.capture_thread = None          # Thread de captura continua
         self.capture_active = False         # Control del thread
+        self.capture_paused = False         # Control de pausa temporal
         
         # Estadísticas de rendimiento
         self.capture_times = Queue(maxsize=StatsConfig.CAPTURE_TIMES_QUEUE_SIZE)
@@ -310,6 +311,12 @@ class CamaraTiempoOptimizada:
         
         try:
             while self.capture_active:
+                # Verificar si la captura está pausada
+                with self.buffer_lock:
+                    if self.capture_paused:
+                        time.sleep(0.001)  # 1ms
+                        continue
+                
                 capture_start = time.time()
                 gevbufPtr = ctypes.POINTER(pygigev.GEV_BUFFER_OBJECT)()
                 
@@ -521,6 +528,22 @@ class CamaraTiempoOptimizada:
             
         except Exception as e:
             print(f"❌ Error liberando recursos de cámara: {e}")
+    
+    def pausar_captura_continua(self):
+        """
+        Pausa temporalmente la captura continua para permitir captura única
+        """
+        with self.buffer_lock:
+            self.capture_paused = True
+            print("⏸️ Captura continua pausada temporalmente")
+    
+    def reanudar_captura_continua(self):
+        """
+        Reanuda la captura continua después de una pausa temporal
+        """
+        with self.buffer_lock:
+            self.capture_paused = False
+            print("▶️ Captura continua reanudada")
 
     def mostrar_configuracion(self):
         """Muestra la configuración actual de la cámara."""

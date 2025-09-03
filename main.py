@@ -212,17 +212,19 @@ def mostrar_menu():
     print("\n" + "="*60)
     print("🎯 ANÁLISIS DISPONIBLE:")
     print("="*60)
-    print("  1. Análisis Completo (Clasificación + Detección)")
+    print("  1. Análisis Completo (Clasificación + Detección de Piezas + Defectos)")
     print("  2. Solo Clasificación")
     print("  3. Solo Detección de Piezas")
-    print("  4. Solo Ver Frame")
-    print("  5. Estadísticas del Sistema")
-    print("  6. Configuración")
-    print("  7. Salir del Sistema")
+    print("  4. Solo Detección de Defectos")
+    print("  5. Solo Ver Frame")
+    print("  6. Estadísticas del Sistema")
+    print("  7. Configuración")
+    print("  8. Salir del Sistema")
     print("="*60)
     print("  ENTER - Opción 1 (Análisis Completo)")
     print("  '2'   - Solo Clasificación")
-    print("  '3'   - Solo Detección")
+    print("  '3'   - Solo Detección de Piezas")
+    print("  '4'   - Solo Detección de Defectos")
     print("  'v'   - Solo Ver Frame")
     print("  's'   - Estadísticas")
     print("  'c'   - Configuración")
@@ -261,16 +263,29 @@ def procesar_comando_analisis_completo(sistema, ventana_cv):
         else:
             print(f"   Estado:     ❓ DESCONOCIDO")
     
-    # Mostrar resultados de detección
-    if "detecciones" in resultados:
-        detecciones = resultados["detecciones"]
+    # Mostrar resultados de detección de piezas
+    if "detecciones_piezas" in resultados:
+        detecciones_piezas = resultados["detecciones_piezas"]
         print(f"\n🎯 DETECCIÓN DE PIEZAS:")
-        print(f"   Piezas detectadas: {len(detecciones)}")
+        print(f"   Piezas detectadas: {len(detecciones_piezas)}")
         
-        for i, deteccion in enumerate(detecciones):
+        for i, deteccion in enumerate(detecciones_piezas):
             bbox = deteccion["bbox"]
             centroide = deteccion["centroide"]
             print(f"   Pieza #{i+1}: {deteccion['clase']} - {deteccion['confianza']:.2%}")
+            print(f"     BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
+            print(f"     Centroide: ({centroide['x']}, {centroide['y']})")
+    
+    # Mostrar resultados de detección de defectos
+    if "detecciones_defectos" in resultados:
+        detecciones_defectos = resultados["detecciones_defectos"]
+        print(f"\n🎯 DETECCIÓN DE DEFECTOS:")
+        print(f"   Defectos detectados: {len(detecciones_defectos)}")
+        
+        for i, defecto in enumerate(detecciones_defectos):
+            bbox = defecto["bbox"]
+            centroide = defecto["centroide"]
+            print(f"   Defecto #{i+1}: {defecto['clase']} - {defecto['confianza']:.2%}")
             print(f"     BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
             print(f"     Centroide: ({centroide['x']}, {centroide['y']})")
     
@@ -280,23 +295,32 @@ def procesar_comando_analisis_completo(sistema, ventana_cv):
         print(f"\n⏱️  TIEMPOS:")
         print(f"   Captura:      {tiempos.get('captura_ms', 0):.2f} ms")
         print(f"   Clasificación: {tiempos.get('clasificacion_ms', 0):.2f} ms")
-        print(f"   Detección:     {tiempos.get('deteccion_ms', 0):.2f} ms")
+        print(f"   Detección Piezas: {tiempos.get('deteccion_piezas_ms', 0):.2f} ms")
+        print(f"   Detección Defectos: {tiempos.get('deteccion_defectos_ms', 0):.2f} ms")
         print(f"   Total:         {tiempos.get('total_ms', 0):.2f} ms")
     
     print("=" * 60)
     
     # Mostrar imagen con detecciones (si hay)
-    if "frame" in resultados and "detecciones" in resultados:
+    if "frame" in resultados:
         frame = resultados["frame"]
-        detecciones = resultados["detecciones"]
         
-        # Crear imagen anotada con detecciones
-        procesador_deteccion = sistema.sistema_integrado.procesador_deteccion
-        frame_anotado = procesador_deteccion.dibujar_detecciones(frame, detecciones)
-        frame_anotado = procesador_deteccion.agregar_informacion_tiempo(frame_anotado, resultados["tiempos"])
+        # Crear imagen anotada con detecciones de piezas
+        if "detecciones_piezas" in resultados and resultados["detecciones_piezas"]:
+            procesador_piezas = sistema.sistema_integrado.procesador_deteccion_piezas
+            frame_anotado = procesador_piezas.dibujar_detecciones(frame, resultados["detecciones_piezas"])
+            frame_anotado = procesador_piezas.agregar_informacion_tiempo(frame_anotado, resultados["tiempos"])
+            frame = frame_anotado
+        
+        # Agregar detecciones de defectos
+        if "detecciones_defectos" in resultados and resultados["detecciones_defectos"]:
+            procesador_defectos = sistema.sistema_integrado.procesador_deteccion_defectos
+            frame_anotado = procesador_defectos.dibujar_defectos(frame, resultados["detecciones_defectos"])
+            frame_anotado = procesador_defectos.agregar_informacion_tiempo(frame_anotado, resultados["tiempos"])
+            frame = frame_anotado
         
         # Mostrar imagen
-        cv2.imshow(ventana_cv, frame_anotado)
+        cv2.imshow(ventana_cv, frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             return False
     
@@ -354,7 +378,7 @@ def procesar_comando_solo_clasificacion(sistema, ventana_cv):
     return True
 
 
-def procesar_comando_solo_deteccion(sistema, ventana_cv):
+def procesar_comando_solo_deteccion_piezas(sistema, ventana_cv):
     """
     Procesa el comando de solo detección de piezas.
     
@@ -364,11 +388,11 @@ def procesar_comando_solo_deteccion(sistema, ventana_cv):
     """
     print("\n🎯 REALIZANDO SOLO DETECCIÓN DE PIEZAS...")
     
-    # Usar sistema integrado para solo detección
+    # Usar sistema integrado para solo detección de piezas
     resultados = sistema.sistema_integrado.solo_deteccion()
     
     if "error" in resultados:
-        print(f"❌ Error en detección: {resultados['error']}")
+        print(f"❌ Error en detección de piezas: {resultados['error']}")
         return True
     
     # Mostrar resultados
@@ -381,8 +405,8 @@ def procesar_comando_solo_deteccion(sistema, ventana_cv):
             bbox = deteccion["bbox"]
             centroide = deteccion["centroide"]
             print(f"   Pieza #{i+1}: {deteccion['clase']} - {deteccion['confianza']:.2%}")
-            print(f"     BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
-            print(f"     Centroide: ({centroide['x']}, {centroide['y']})")
+            print(f"   BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
+            print(f"   Centroide: ({centroide['x']}, {centroide['y']})")
     
     # Mostrar tiempos
     if "tiempos" in resultados:
@@ -400,9 +424,67 @@ def procesar_comando_solo_deteccion(sistema, ventana_cv):
         detecciones = resultados["detecciones"]
         
         # Crear imagen anotada con detecciones
-        procesador_deteccion = sistema.sistema_integrado.procesador_deteccion
+        procesador_deteccion = sistema.sistema_integrado.procesador_deteccion_piezas
         frame_anotado = procesador_deteccion.dibujar_detecciones(frame, detecciones)
         frame_anotado = procesador_deteccion.agregar_informacion_tiempo(frame_anotado, resultados["tiempos"])
+        
+        # Mostrar imagen
+        cv2.imshow(ventana_cv, frame_anotado)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return False
+    
+    return True
+
+
+def procesar_comando_solo_deteccion_defectos(sistema, ventana_cv):
+    """
+    Procesa el comando de solo detección de defectos.
+    
+    Args:
+        sistema (SistemaAnalisisCoples): Sistema principal
+        ventana_cv (str): Nombre de la ventana OpenCV
+    """
+    print("\n🎯 REALIZANDO SOLO DETECCIÓN DE DEFECTOS...")
+    
+    # Usar sistema integrado para solo detección de defectos
+    resultados = sistema.sistema_integrado.solo_deteccion_defectos()
+    
+    if "error" in resultados:
+        print(f"❌ Error en detección de defectos: {resultados['error']}")
+        return True
+    
+    # Mostrar resultados
+    if "detecciones_defectos" in resultados:
+        detecciones = resultados["detecciones_defectos"]
+        print(f"\n🎯 DETECCIÓN DE DEFECTOS:")
+        print(f"   Defectos detectados: {len(detecciones)}")
+        
+        for i, defecto in enumerate(detecciones):
+            bbox = defecto["bbox"]
+            centroide = defecto["centroide"]
+            print(f"   Defecto #{i+1}: {defecto['clase']} - {defecto['confianza']:.2%}")
+            print(f"   BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
+            print(f"   Centroide: ({centroide['x']}, {centroide['y']})")
+    
+    # Mostrar tiempos
+    if "tiempos" in resultados:
+        tiempos = resultados["tiempos"]
+        print(f"\n⏱️  TIEMPOS:")
+        print(f"   Captura:   {tiempos.get('captura_ms', 0):.2f} ms")
+        print(f"   Detección: {tiempos.get('deteccion_defectos_ms', 0):.2f} ms")
+        print(f"   Total:     {tiempos.get('total_ms', 0):.2f} ms")
+    
+    print("=" * 60)
+    
+    # Mostrar imagen con detecciones
+    if "frame" in resultados and "detecciones_defectos" in resultados:
+        frame = resultados["frame"]
+        detecciones = resultados["detecciones_defectos"]
+        
+        # Crear imagen anotada con detecciones
+        procesador_defectos = sistema.sistema_integrado.procesador_deteccion_defectos
+        frame_anotado = procesador_defectos.dibujar_defectos(frame, detecciones)
+        frame_anotado = procesador_defectos.agregar_informacion_tiempo(frame_anotado, resultados["tiempos"])
         
         # Mostrar imagen
         cv2.imshow(ventana_cv, frame_anotado)
@@ -601,8 +683,13 @@ def main():
                     break
             
             elif entrada == '3':
-                # Solo Detección
-                if not procesar_comando_solo_deteccion(sistema, ventana_cv):
+                # Solo Detección de Piezas
+                if not procesar_comando_solo_deteccion_piezas(sistema, ventana_cv):
+                    break
+            
+            elif entrada == '4':
+                # Solo Detección de Defectos
+                if not procesar_comando_solo_deteccion_defectos(sistema, ventana_cv):
                     break
             
             elif entrada == 'help' or entrada == 'h':
