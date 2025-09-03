@@ -73,8 +73,8 @@ class ProcesadorBoundingBoxes:
             # Dibujar bounding box
             cv2.rectangle(imagen_anotada, (x1, y1), (x2, y2), color, self.grosor_linea)
             
-            # Dibujar centroide
-            cx, cy = centroide["x"], centroide["y"]
+            # Dibujar centroide (asegurar que sean enteros)
+            cx, cy = int(centroide["x"]), int(centroide["y"])
             cv2.circle(imagen_anotada, (cx, cy), 3, color, -1)
             
             # Preparar texto de etiqueta (mostrar confianza como porcentaje)
@@ -179,6 +179,26 @@ class ProcesadorBoundingBoxes:
         Returns:
             Diccionario con metadatos
         """
+        # Convertir valores float32 a float estándar para JSON
+        detecciones_serializables = []
+        for deteccion in detecciones:
+            deteccion_serializable = {
+                "clase": deteccion["clase"],
+                "confianza": float(deteccion["confianza"]),  # Convertir a float estándar
+                "bbox": {
+                    "x1": int(deteccion["bbox"]["x1"]),
+                    "y1": int(deteccion["bbox"]["y1"]),
+                    "x2": int(deteccion["bbox"]["x2"]),
+                    "y2": int(deteccion["bbox"]["y2"])
+                },
+                "centroide": {
+                    "x": int(deteccion["centroide"]["x"]),
+                    "y": int(deteccion["centroide"]["y"])
+                },
+                "area": int(deteccion["area"])
+            }
+            detecciones_serializables.append(deteccion_serializable)
+        
         metadatos = {
             "archivo_imagen": nombre_archivo,
             "tipo_analisis": "deteccion_piezas",
@@ -189,13 +209,13 @@ class ProcesadorBoundingBoxes:
                 "alto": 640,
                 "canales": 3
             },
-            "piezas_detectadas": detecciones,
+            "piezas_detectadas": detecciones_serializables,
             "tiempos": tiempos,
             "estadisticas": {
                 "total_piezas": len(detecciones),
-                "confianza_promedio": np.mean([d["confianza"] for d in detecciones]) if detecciones else 0,
-                "confianza_maxima": max([d["confianza"] for d in detecciones]) if detecciones else 0,
-                "confianza_minima": min([d["confianza"] for d in detecciones]) if detecciones else 0
+                "confianza_promedio": float(np.mean([d["confianza"] for d in detecciones])) if detecciones else 0,
+                "confianza_maxima": float(max([d["confianza"] for d in detecciones])) if detecciones else 0,
+                "confianza_minima": float(min([d["confianza"] for d in detecciones])) if detecciones else 0
             }
         }
         
