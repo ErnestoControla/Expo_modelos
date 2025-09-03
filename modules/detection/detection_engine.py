@@ -57,7 +57,8 @@ class DetectorCoplesONNX:
         self.decoder = YOLOv11Decoder(
             confianza_min=0.55,  # Forzar umbral de 55% para mayor precisión
             iou_threshold=0.35,  # Más agresivo para eliminar falsos positivos
-            max_det=30           # Reducido para mayor calidad
+            max_det=30,          # Reducido para mayor calidad
+            class_names=self.clases  # Pasar las clases del detector de piezas
         )
     
     def _cargar_clases(self) -> List[str]:

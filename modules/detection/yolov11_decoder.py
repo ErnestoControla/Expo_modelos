@@ -13,7 +13,7 @@ class YOLOv11Decoder:
     Maneja el formato específico (1, 5, 8400) con sigmoid y conversión de coordenadas
     """
     
-    def __init__(self, confianza_min: float = 0.55, iou_threshold: float = 0.35, max_det: int = 30):
+    def __init__(self, confianza_min: float = 0.55, iou_threshold: float = 0.35, max_det: int = 30, class_names: List[str] = None):
         """
         Inicializa el decodificador YOLOv11
         
@@ -21,11 +21,13 @@ class YOLOv11Decoder:
             confianza_min: Umbral mínimo de confianza (aumentado a 0.55 para mayor precisión)
             iou_threshold: Umbral de IoU para NMS (reducido a 0.35 para ser más agresivo)
             max_det: Número máximo de detecciones (reducido a 30 para mayor calidad)
+            class_names: Lista de nombres de clases para usar en las detecciones
         """
         self.confianza_min = confianza_min
         self.iou_threshold = iou_threshold
         self.max_det = max_det
-        print(f"🎯 YOLOv11Decoder inicializado - Conf: {confianza_min}, IoU: {iou_threshold}, MaxDet: {max_det}")
+        self.class_names = class_names or ["Cople"]  # Por defecto usa "Cople" si no se proporcionan clases
+        print(f"🎯 YOLOv11Decoder inicializado - Conf: {confianza_min}, IoU: {iou_threshold}, MaxDet: {max_det}, Clases: {self.class_names}")
     
     def decode_output(self, outputs: np.ndarray, imagen_shape: Tuple[int, int] = (640, 640)) -> List[Dict]:
         """
@@ -112,8 +114,11 @@ class YOLOv11Decoder:
                         
                         # Validar área mínima (aumentada para evitar detecciones muy pequeñas)
                         if area >= 100:  # Aumentado de 10 a 100
+                            # Usar la primera clase disponible o "Cople" por defecto
+                            clase_nombre = self.class_names[0] if self.class_names else "Cople"
+                            
                             detection = {
-                                "clase": "Cople",  # Asumiendo una sola clase
+                                "clase": clase_nombre,
                                 "confianza": float(confidence),
                                 "bbox": {
                                     "x1": int(x1),
@@ -129,7 +134,7 @@ class YOLOv11Decoder:
                             }
                             
                             detecciones.append(detection)
-                            print(f"✅ YOLOv11Decoder - Detección {i+1}: Cople - {confidence:.3f} - BBox: ({int(x1)},{int(y1)}) a ({int(x2)},{int(y2)}) - Área: {area}")
+                            print(f"✅ YOLOv11Decoder - Detección {i+1}: {clase_nombre} - {confidence:.3f} - BBox: ({int(x1)},{int(y1)}) a ({int(x2)},{int(y2)}) - Área: {area}")
                         else:
                             print(f"⚠️ YOLOv11Decoder - Detección {i+1} descartada por área insuficiente: {area}")
                     else:

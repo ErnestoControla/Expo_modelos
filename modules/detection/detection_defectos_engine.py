@@ -65,15 +65,16 @@ class DetectorDefectosCoples:
         self.confianza_min = confianza_min
         self.input_size = ModelsConfig.INPUT_SIZE  # 640x640
         
-        # Decodificador YOLOv11
+        # Cargar clases PRIMERO
+        self._cargar_clases()
+        
+        # Decodificador YOLOv11 DESPUÉS de cargar clases
         self.decoder = YOLOv11Decoder(
             confianza_min=confianza_min,
             iou_threshold=0.35,
-            max_det=30
+            max_det=30,
+            class_names=self.class_names  # Pasar las clases del detector de defectos
         )
-        
-        # Cargar clases
-        self._cargar_clases()
     
     def _cargar_clases(self):
         """Carga las clases desde el archivo de texto."""
