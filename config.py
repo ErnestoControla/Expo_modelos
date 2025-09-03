@@ -46,11 +46,14 @@ class ModelsConfig:
     CLASSIFICATION_MODEL = "CopleClasDef2C1V.onnx"
     CLASSIFICATION_CLASSES = "clases_CopleClasDef2C1V.txt"
     
-    # Modelos futuros
+    # Modelos de detección
     DETECTION_DEFECTOS_MODEL = "CopleDetDef1C2V.onnx"
     DETECTION_DEFECTOS_CLASSES = "clases_CopleDetDef1C2V.txt"
     DETECTION_PARTS_MODEL = "CopleDetPZ1C1V.onnx"
-    SEGMENTATION_DEFECTS_MODEL = "CopleSegDef1C8V.onnx"
+    
+    # Modelos de segmentación
+    SEGMENTATION_DEFECTOS_MODEL = "CopleSegDef1C8V.onnx"
+    SEGMENTATION_DEFECTOS_CLASSES = "clases_CopleSegDef1C8V.txt"
     SEGMENTATION_PARTS_MODEL = "CopleSegPz1C1V.onnx"
     
     # Parámetros de inferencia

@@ -212,19 +212,21 @@ def mostrar_menu():
     print("\n" + "="*60)
     print("🎯 ANÁLISIS DISPONIBLE:")
     print("="*60)
-    print("  1. Análisis Completo (Clasificación + Detección de Piezas + Defectos)")
+    print("  1. Análisis Completo (Clasificación + Detección de Piezas + Defectos + Segmentación)")
     print("  2. Solo Clasificación")
     print("  3. Solo Detección de Piezas")
     print("  4. Solo Detección de Defectos")
-    print("  5. Solo Ver Frame")
-    print("  6. Estadísticas del Sistema")
-    print("  7. Configuración")
-    print("  8. Salir del Sistema")
+    print("  5. Solo Segmentación de Defectos")
+    print("  6. Solo Ver Frame")
+    print("  7. Estadísticas del Sistema")
+    print("  8. Configuración")
+    print("  9. Salir del Sistema")
     print("="*60)
     print("  ENTER - Opción 1 (Análisis Completo)")
     print("  '2'   - Solo Clasificación")
     print("  '3'   - Solo Detección de Piezas")
     print("  '4'   - Solo Detección de Defectos")
+    print("  '5'   - Solo Segmentación de Defectos")
     print("  'v'   - Solo Ver Frame")
     print("  's'   - Estadísticas")
     print("  'c'   - Configuración")
@@ -494,6 +496,73 @@ def procesar_comando_solo_deteccion_defectos(sistema, ventana_cv):
     return True
 
 
+def procesar_comando_solo_segmentacion_defectos(sistema, ventana_cv):
+    """
+    Procesa el comando de solo segmentación de defectos.
+    
+    Args:
+        sistema (SistemaAnalisisCoples): Sistema principal
+        ventana_cv (str): Nombre de la ventana OpenCV
+    """
+    print("\n🎯 REALIZANDO SOLO SEGMENTACIÓN DE DEFECTOS...")
+    
+    # Usar sistema integrado para solo segmentación de defectos
+    resultados = sistema.sistema_integrado.solo_segmentacion_defectos()
+    
+    if "error" in resultados:
+        print(f"❌ Error en segmentación de defectos: {resultados['error']}")
+        return True
+    
+    # Mostrar resultados de segmentación de defectos
+    if "segmentaciones_defectos" in resultados:
+        segmentaciones_defectos = resultados["segmentaciones_defectos"]
+        print(f"\n🎯 SEGMENTACIÓN DE DEFECTOS:")
+        print(f"   Segmentaciones detectadas: {len(segmentaciones_defectos)}")
+        
+        for i, segmentacion in enumerate(segmentaciones_defectos):
+            bbox = segmentacion["bbox"]
+            centroide = segmentacion["centroide"]
+            print(f"   Segmentación #{i+1}: {segmentacion['clase']} - {segmentacion['confianza']:.2%}")
+            print(f"     BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
+            print(f"     Centroide: ({centroide['x']}, {centroide['y']})")
+            print(f"     Área: {segmentacion['area']}")
+    
+    # Mostrar tiempos
+    if "tiempos" in resultados:
+        tiempos = resultados["tiempos"]
+        print(f"\n⏱️  TIEMPOS:")
+        print(f"   Captura:      {tiempos.get('captura_ms', 0):.2f} ms")
+        print(f"   Segmentación: {tiempos.get('segmentacion_defectos_ms', 0):.2f} ms")
+        print(f"   Total:        {tiempos.get('total_ms', 0):.2f} ms")
+    
+    print("=" * 60)
+    
+    # Mostrar imagen con segmentaciones (si hay)
+    if "frame" in resultados:
+        frame = resultados["frame"]
+        
+        # Crear imagen anotada con segmentaciones de defectos
+        if "segmentaciones_defectos" in resultados and resultados["segmentaciones_defectos"]:
+            frame_anotado = sistema.sistema_integrado.procesador_segmentacion_defectos.dibujar_segmentaciones(
+                frame, resultados["segmentaciones_defectos"]
+            )
+            
+            # Agregar información de tiempos
+            frame_anotado = sistema.sistema_integrado.procesador_segmentacion_defectos.agregar_informacion_tiempo(
+                frame_anotado, resultados["tiempos"]
+            )
+            
+            # Mostrar imagen
+            cv2.imshow(ventana_cv, frame_anotado)
+            cv2.waitKey(1)
+        else:
+            # Mostrar imagen sin anotaciones
+            cv2.imshow(ventana_cv, frame)
+            cv2.waitKey(1)
+    
+    return True
+
+
 def procesar_comando_clasificacion(sistema, ventana_cv):
     """
     Procesa el comando de captura y clasificación.
@@ -690,6 +759,11 @@ def main():
             elif entrada == '4':
                 # Solo Detección de Defectos
                 if not procesar_comando_solo_deteccion_defectos(sistema, ventana_cv):
+                    break
+            
+            elif entrada == '5':
+                # Solo Segmentación de Defectos
+                if not procesar_comando_solo_segmentacion_defectos(sistema, ventana_cv):
                     break
             
             elif entrada == 'help' or entrada == 'h':

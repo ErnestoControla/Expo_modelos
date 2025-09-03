@@ -1,0 +1,140 @@
+{
+  "archivo_imagen": "cople_segmentacion_defectos_20250903_173932.jpg",
+  "tipo_analisis": "segmentacion_defectos",
+  "timestamp": "2025-09-03T17:39:32.884937",
+  "modelo": "CopleSegDef1C8V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  },
+  "segmentaciones_detectadas": [
+    {
+      "clase": "Defecto",
+      "confianza": 0.7047723531723022,
+      "bbox": {
+        "x1": 213,
+        "y1": 184,
+        "x2": 253,
+        "y2": 213
+      },
+      "centroide": {
+        "x": 233,
+        "y": 198
+      },
+      "area": 1168,
+      "area_mascara": 787,
+      "coeficientes_mascara": [
+        0.002710942178964615,
+        -0.24128609895706177,
+        0.10277481377124786,
+        -0.2457762360572815,
+        -0.5240018963813782
+      ]
+    },
+    {
+      "clase": "Defecto",
+      "confianza": 0.6945186853408813,
+      "bbox": {
+        "x1": 331,
+        "y1": 193,
+        "x2": 375,
+        "y2": 219
+      },
+      "centroide": {
+        "x": 353,
+        "y": 206
+      },
+      "area": 1116,
+      "area_mascara": 781,
+      "coeficientes_mascara": [
+        -0.0751529410481453,
+        -0.23906324803829193,
+        0.11162321269512177,
+        -0.17483402788639069,
+        -0.5157605409622192
+      ]
+    },
+    {
+      "clase": "Defecto",
+      "confianza": 0.689030647277832,
+      "bbox": {
+        "x1": 104,
+        "y1": 245,
+        "x2": 134,
+        "y2": 273
+      },
+      "centroide": {
+        "x": 119,
+        "y": 259
+      },
+      "area": 828,
+      "area_mascara": 619,
+      "coeficientes_mascara": [
+        0.010494371876120567,
+        -0.16413451731204987,
+        -0.05635514855384827,
+        -0.2167181670665741,
+        -0.3600398004055023
+      ]
+    },
+    {
+      "clase": "Defecto",
+      "confianza": 0.6471474170684814,
+      "bbox": {
+        "x1": 394,
+        "y1": 334,
+        "x2": 426,
+        "y2": 351
+      },
+      "centroide": {
+        "x": 410,
+        "y": 343
+      },
+      "area": 524,
+      "area_mascara": 438,
+      "coeficientes_mascara": [
+        0.12511613965034485,
+        0.015544090420007706,
+        0.2251112312078476,
+        -0.04281685873866081,
+        -0.22820669412612915
+      ]
+    },
+    {
+      "clase": "Defecto",
+      "confianza": 0.5522415637969971,
+      "bbox": {
+        "x1": 103,
+        "y1": 363,
+        "x2": 122,
+        "y2": 379
+      },
+      "centroide": {
+        "x": 113,
+        "y": 371
+      },
+      "area": 318,
+      "area_mascara": 220,
+      "coeficientes_mascara": [
+        -0.01514429785311222,
+        -0.013017648831009865,
+        0.12743695080280304,
+        -0.09165024757385254,
+        -0.027993429452180862
+      ]
+    }
+  ],
+  "tiempos": {
+    "captura_ms": 0.18262863159179688,
+    "segmentacion_defectos_ms": 144.06085014343262,
+    "total_ms": 144.06251907348633
+  },
+  "estadisticas": {
+    "total_segmentaciones": 5,
+    "confianza_promedio": 0.6575421333312989,
+    "confianza_maxima": 0.7047723531723022,
+    "confianza_minima": 0.5522415637969971,
+    "area_total": 3954
+  }
+}

@@ -17,6 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from modules.capture import CamaraTiempoOptimizada
 from modules.classification import ClasificadorCoplesONNX, ProcesadorImagenClasificacion
 from modules.detection import DetectorPiezasCoples, ProcesadorPiezasCoples, DetectorDefectosCoples, ProcesadorDefectos
+from modules.segmentation import SegmentadorDefectosCoples, ProcesadorSegmentacionDefectos
 from config import GlobalConfig
 
 
@@ -32,9 +33,11 @@ class SistemaAnalisisIntegrado:
         self.clasificador = None
         self.detector_piezas = None
         self.detector_defectos = None
+        self.segmentador_defectos = None
         self.procesador_clasificacion = None
         self.procesador_deteccion_piezas = None
         self.procesador_deteccion_defectos = None
+        self.procesador_segmentacion_defectos = None
         
         # Estado del sistema
         self.inicializado = False
@@ -92,7 +95,15 @@ class SistemaAnalisisIntegrado:
                 return False
             self.procesador_deteccion_defectos = ProcesadorDefectos()
             
-            # 5. Iniciar captura continua
+            # 5. Inicializar segmentador de defectos
+            print("🎯 Inicializando segmentador de defectos...")
+            self.segmentador_defectos = SegmentadorDefectosCoples()
+            if not self.segmentador_defectos._inicializar_modelo():
+                print("❌ Error inicializando segmentador de defectos")
+                return False
+            self.procesador_segmentacion_defectos = ProcesadorSegmentacionDefectos()
+            
+            # 6. Iniciar captura continua
             print("🎬 Iniciando captura continua...")
             if not self.camara.iniciar_captura_continua():
                 print("❌ Error iniciando captura continua")
@@ -440,6 +451,57 @@ class SistemaAnalisisIntegrado:
             print(f"❌ Error en detección de defectos: {e}")
             return {"error": str(e)}
     
+    def solo_segmentacion_defectos(self) -> Dict:
+        """
+        Realiza solo segmentación de defectos (sin clasificación ni detección)
+        
+        Returns:
+            Diccionario con resultados de segmentación de defectos
+        """
+        if not self.inicializado:
+            return {"error": "Sistema no inicializado"}
+        
+        try:
+            # 1. Capturar imagen única
+            resultado_captura = self.capturar_imagen_unica()
+            if "error" in resultado_captura:
+                return resultado_captura
+            
+            frame = resultado_captura["frame"]
+            timestamp_captura = resultado_captura["timestamp_captura"]
+            tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
+            
+            tiempo_inicio = time.time()
+            
+            # 2. Segmentación de defectos
+            tiempo_segmentacion_inicio = time.time()
+            segmentaciones_defectos = self.segmentador_defectos.segmentar_defectos(frame)
+            tiempo_segmentacion = (time.time() - tiempo_segmentacion_inicio) * 1000
+            
+            # 3. Calcular tiempo total
+            tiempo_total = (time.time() - tiempo_inicio) * 1000
+            
+            # 4. Crear resultados
+            resultados = {
+                "segmentaciones_defectos": segmentaciones_defectos,
+                "tiempos": {
+                    "captura_ms": tiempo_captura,
+                    "segmentacion_defectos_ms": tiempo_segmentacion,
+                    "total_ms": tiempo_total
+                },
+                "frame": frame,
+                "timestamp_captura": timestamp_captura
+            }
+            
+            # 5. Guardar resultados por módulo
+            self._guardar_por_modulos(resultados)
+            
+            return resultados
+            
+        except Exception as e:
+            print(f"❌ Error en segmentación de defectos: {e}")
+            return {"error": str(e)}
+    
     def _guardar_por_modulos(self, resultados: Dict):
         """Guarda resultados por módulos en carpetas separadas"""
         try:
@@ -457,6 +519,10 @@ class SistemaAnalisisIntegrado:
             # 3. Guardar detección de defectos (si existe)
             if "detecciones_defectos" in resultados:
                 self._guardar_deteccion_defectos_modulo(resultados, timestamp_captura)
+            
+            # 4. Guardar segmentación de defectos (si existe)
+            if "segmentaciones_defectos" in resultados:
+                self._guardar_segmentacion_defectos_modulo(resultados, timestamp_captura)
             
             print(f"✅ Resultados #{self.contador_resultados} guardados por módulos")
             
@@ -540,18 +606,36 @@ class SistemaAnalisisIntegrado:
         except Exception as e:
             print(f"❌ Error guardando detección de defectos: {e}")
     
+    def _guardar_segmentacion_defectos_modulo(self, resultados: Dict, timestamp_captura: str):
+        """Guarda resultados de segmentación de defectos en su módulo específico"""
+        try:
+            # Guardar segmentación de defectos en módulo específico
+            self.procesador_segmentacion_defectos.procesar_segmentacion_defectos(
+                resultados["frame"],
+                resultados["segmentaciones_defectos"],
+                resultados["tiempos"],
+                self.directorios_salida["segmentacion_defectos"],
+                timestamp_captura
+            )
+            
+            print(f"   📁 Segmentación de defectos guardada en: {self.directorios_salida['segmentacion_defectos']}")
+            
+        except Exception as e:
+            print(f"❌ Error guardando segmentación de defectos: {e}")
+    
     def obtener_estadisticas(self) -> Dict:
         """Retorna estadísticas del sistema"""
         if not self.inicializado:
             return {"error": "Sistema no inicializado"}
         
         stats = {
-            "sistema": "Integrado (Clasificación + Detección de Piezas + Detección de Defectos)",
+            "sistema": "Integrado (Clasificación + Detección de Piezas + Detección de Defectos + Segmentación de Defectos)",
             "resultados_procesados": self.contador_resultados,
             "camara": self.camara.obtener_estadisticas() if self.camara else {},
             "clasificador": self.clasificador.obtener_estadisticas() if self.clasificador else {},
             "detector_piezas": self.detector_piezas.obtener_estadisticas() if self.detector_piezas else {},
-            "detector_defectos": self.detector_defectos.obtener_estadisticas() if self.detector_defectos else {}
+            "detector_defectos": self.detector_defectos.obtener_estadisticas() if self.detector_defectos else {},
+            "segmentador_defectos": self.segmentador_defectos.obtener_estadisticas() if self.segmentador_defectos else {}
         }
         
         return stats
@@ -572,6 +656,9 @@ class SistemaAnalisisIntegrado:
             
             if self.detector_defectos:
                 self.detector_defectos.liberar()
+            
+            if self.segmentador_defectos:
+                self.segmentador_defectos.liberar()
             
             self.inicializado = False
             print("✅ Recursos del sistema integrado liberados")

@@ -1,6 +1,11 @@
 """
-Módulo de segmentación de coples (futuro)
+Módulo de Segmentación para Análisis de Coples
 """
 
-# Este módulo será implementado en futuras versiones
-# Incluirá segmentación de defectos y piezas
+from .segmentation_defectos_engine import SegmentadorDefectosCoples
+from .defectos_segmentation_processor import ProcesadorSegmentacionDefectos
+
+__all__ = [
+    "SegmentadorDefectosCoples",
+    "ProcesadorSegmentacionDefectos"
+]
