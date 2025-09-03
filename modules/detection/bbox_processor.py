@@ -138,7 +138,7 @@ class ProcesadorBoundingBoxes:
         # Información de tiempos
         info_tiempos = [
             f"Captura: {tiempos.get('captura_ms', 0):.2f} ms",
-            f"Inferencia: {tiempos.get('inferencia_ms', 0):.2f} ms",
+            f"Detección: {tiempos.get('deteccion_ms', 0):.2f} ms",
             f"Total: {tiempos.get('total_ms', 0):.2f} ms"
         ]
         

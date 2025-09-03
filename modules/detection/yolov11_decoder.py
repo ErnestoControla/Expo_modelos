@@ -4,356 +4,207 @@ Interpreta el formato de salida (1, 5, 8400) y lo convierte a coordenadas reales
 """
 
 import numpy as np
-from typing import List, Dict, Tuple
 import cv2
+from typing import List, Tuple, Dict, Any
 
 class YOLOv11Decoder:
     """
-    Decodificador para el formato de salida específico de YOLOv11
+    Decodificador optimizado para modelos YOLOv11 ONNX
+    Maneja el formato específico (1, 5, 8400) con sigmoid y conversión de coordenadas
     """
     
-    def __init__(self, input_shape: Tuple[int, int] = (640, 640)):
-        self.input_shape = input_shape
-        self.height, self.width = input_shape
-        
-    def decode_output(self, output: np.ndarray) -> List[Dict]:
+    def __init__(self, confianza_min: float = 0.55, iou_threshold: float = 0.35, max_det: int = 30):
         """
-        Decodifica la salida de YOLOv11
+        Inicializa el decodificador YOLOv11
         
         Args:
-            output: Array de salida con formato (1, 5, 8400)
+            confianza_min: Umbral mínimo de confianza (aumentado a 0.55 para mayor precisión)
+            iou_threshold: Umbral de IoU para NMS (reducido a 0.35 para ser más agresivo)
+            max_det: Número máximo de detecciones (reducido a 30 para mayor calidad)
+        """
+        self.confianza_min = confianza_min
+        self.iou_threshold = iou_threshold
+        self.max_det = max_det
+        print(f"🎯 YOLOv11Decoder inicializado - Conf: {confianza_min}, IoU: {iou_threshold}, MaxDet: {max_det}")
+    
+    def decode_output(self, outputs: np.ndarray, imagen_shape: Tuple[int, int] = (640, 640)) -> List[Dict]:
+        """
+        Decodifica las predicciones del modelo YOLOv11 ONNX
+        
+        Args:
+            outputs: Salida del modelo ONNX con shape (1, 5, 8400)
+                    - 5 = [x, y, w, h, conf] para 1 clase
+                    - 8400 = número de anchors (80×80 + 40×40 + 20×20)
+            imagen_shape: Tamaño de la imagen de entrada (height, width)
             
         Returns:
-            Lista de detecciones con bbox, clase y confianza
+            Lista de detecciones con formato estándar
         """
-        detecciones = []
-        
         try:
-            # Formato: (1, 5, 8400)
-            if len(output.shape) == 3:
-                output = output[0]  # Remover batch dimension
+            print(f"🔍 YOLOv11Decoder - Input shape: {outputs.shape}")
+            print(f"🔍 YOLOv11Decoder - Imagen shape: {imagen_shape}")
             
-            print(f"🔍 YOLOv11 Decoder - Formato: {output.shape}")
+            # Verificar formato de salida
+            if len(outputs.shape) != 3 or outputs.shape[1] != 5:
+                raise ValueError(f"Formato inesperado. Se esperaba shape (1, 5, N), se recibió {outputs.shape}")
             
-            # Para YOLOv11, cada fila (5) representa una detección
-            # Los 8400 valores contienen características que necesitan decodificación
+            # Transponer para facilitar procesamiento: (1, 5, 8400) -> (8400, 5)
+            predictions = outputs[0].transpose()  # Shape: (8400, 5)
+            print(f"🔍 YOLOv11Decoder - Predictions shape: {predictions.shape}")
             
-            for i in range(output.shape[0]):
-                detection_features = output[i]
+            # Separar coordenadas y confianzas
+            boxes = predictions[:, :4]  # [x_center, y_center, width, height]
+            confidences = predictions[:, 4]  # Puntuaciones de confianza (logits)
+            
+            print(f"🔍 YOLOv11Decoder - Boxes shape: {boxes.shape}")
+            print(f"🔍 YOLOv11Decoder - Confidences shape: {confidences.shape}")
+            print(f"🔍 YOLOv11Decoder - Rango confidences: [{np.min(confidences):.4f}, {np.max(confidences):.4f}]")
+            
+            # CRÍTICO: Aplicar sigmoid a las confianzas
+            confidences_sigmoid = self._sigmoid(confidences)
+            print(f"🔍 YOLOv11Decoder - Rango confidences (sigmoid): [{np.min(confidences_sigmoid):.4f}, {np.max(confidences_sigmoid):.4f}]")
+            
+            # Filtrar por confianza mínima (más estricto)
+            valid_indices = confidences_sigmoid > self.confianza_min
+            valid_count = np.sum(valid_indices)
+            print(f"🔍 YOLOv11Decoder - Detecciones válidas (conf > {self.confianza_min}): {valid_count}")
+            
+            if valid_count == 0:
+                print("⚠️ YOLOv11Decoder - No se encontraron detecciones con confianza suficiente")
+                return []
+            
+            # Filtrar predicciones válidas
+            boxes_valid = boxes[valid_indices]
+            confidences_valid = confidences_sigmoid[valid_indices]
+            
+            # Convertir de formato center_x, center_y, width, height a x1, y1, x2, y2
+            boxes_xyxy = self._convert_to_xyxy(boxes_valid)
+            print(f"🔍 YOLOv11Decoder - Boxes XYXY shape: {boxes_xyxy.shape}")
+            
+            # Aplicar Non-Maximum Suppression con parámetros más agresivos
+            indices = cv2.dnn.NMSBoxes(
+                boxes_xyxy.tolist(), 
+                confidences_valid.tolist(), 
+                self.confianza_min, 
+                self.iou_threshold
+            )
+            
+            print(f"🔍 YOLOv11Decoder - NMS aplicado, índices válidos: {len(indices) if len(indices) > 0 else 0}")
+            
+            detecciones = []
+            
+            if len(indices) > 0:
+                # Limitar número máximo de detecciones
+                indices = indices.flatten()[:self.max_det]
                 
-                # Analizar la distribución de valores
-                self._analizar_features(detection_features, i)
-                
-                # Intentar diferentes estrategias de decodificación
-                deteccion = self._decodificar_features(detection_features, i)
-                
-                if deteccion:
-                    detecciones.append(deteccion)
+                for i, idx in enumerate(indices):
+                    x1, y1, x2, y2 = boxes_xyxy[idx]
+                    confidence = confidences_valid[idx]
+                    
+                    # Validar coordenadas dentro de la imagen
+                    if (x1 >= 0 and y1 >= 0 and x2 <= imagen_shape[1] and y2 <= imagen_shape[0] and
+                        x1 < x2 and y1 < y2):
+                        
+                        # Calcular centroide y área
+                        centroid_x = int((x1 + x2) / 2)
+                        centroid_y = int((y1 + y2) / 2)
+                        area = int((x2 - x1) * (y2 - y1))
+                        
+                        # Validar área mínima (aumentada para evitar detecciones muy pequeñas)
+                        if area >= 100:  # Aumentado de 10 a 100
+                            detection = {
+                                "clase": "Cople",  # Asumiendo una sola clase
+                                "confianza": float(confidence),
+                                "bbox": {
+                                    "x1": int(x1),
+                                    "y1": int(y1),
+                                    "x2": int(x2),
+                                    "y2": int(y2)
+                                },
+                                "centroide": {
+                                    "x": centroid_x,
+                                    "y": centroid_y
+                                },
+                                "area": area
+                            }
+                            
+                            detecciones.append(detection)
+                            print(f"✅ YOLOv11Decoder - Detección {i+1}: Cople - {confidence:.3f} - BBox: ({int(x1)},{int(y1)}) a ({int(x2)},{int(y2)}) - Área: {area}")
+                        else:
+                            print(f"⚠️ YOLOv11Decoder - Detección {i+1} descartada por área insuficiente: {area}")
+                    else:
+                        print(f"⚠️ YOLOv11Decoder - Detección {i+1} descartada por coordenadas inválidas: ({x1:.1f},{y1:.1f}) a ({x2:.1f},{y2:.1f})")
             
+            print(f"🎯 YOLOv11Decoder - Total detecciones finales: {len(detecciones)}")
             return detecciones
             
         except Exception as e:
-            print(f"❌ Error en decodificación YOLOv11: {e}")
+            print(f"❌ YOLOv11Decoder - Error en decodificación: {e}")
             return []
     
-    def _analizar_features(self, features: np.ndarray, deteccion_id: int):
-        """Analiza las características de una detección"""
-        print(f"🔍 Detección {deteccion_id} - Análisis de features:")
-        print(f"   - Rango: [{np.min(features):.4f}, {np.max(features):.4f}]")
-        print(f"   - Valores > 0: {np.sum(features > 0)}")
-        print(f"   - Valores > 1: {np.sum(features > 1)}")
-        print(f"   - Valores > 100: {np.sum(features > 100)}")
-        
-        # Buscar valores que podrían ser coordenadas
-        coord_candidates = features[(features >= 0) & (features <= 640)]
-        if len(coord_candidates) > 0:
-            print(f"   - Coordenadas candidatas: {coord_candidates[:5]}")
-        
-        # Análisis avanzado de distribución
-        self._analisis_distribucion_avanzado(features, deteccion_id)
-    
-    def _analisis_distribucion_avanzado(self, features: np.ndarray, deteccion_id: int):
-        """Análisis avanzado de la distribución de features para entender mejor YOLOv11"""
-        try:
-            # Calcular percentiles para entender la distribución
-            percentiles = np.percentile(features, [10, 25, 50, 75, 90])
-            print(f"   📊 Percentiles: 10%={percentiles[0]:.2f}, 25%={percentiles[1]:.2f}, 50%={percentiles[2]:.2f}, 75%={percentiles[3]:.2f}, 90%={percentiles[4]:.2f}")
-            
-            # Buscar valores únicos y su frecuencia
-            valores_unicos, conteos = np.unique(features, return_counts=True)
-            valores_frecuentes = valores_unicos[conteos > 1]
-            
-            if len(valores_frecuentes) > 0:
-                print(f"   🔢 Valores repetidos: {valores_frecuentes[:5]} (conteos: {conteos[conteos > 1][:5]})")
-            
-            # Buscar patrones en la distribución
-            # YOLOv11 podría usar diferentes rangos para diferentes tipos de información
-            rangos_analisis = [
-                (0, 1, "Normalizados"),
-                (1, 10, "Pequeños"),
-                (10, 100, "Medianos"),
-                (100, 640, "Coordenadas"),
-                (640, 1000, "Grandes"),
-                (1000, float('inf'), "Muy grandes")
-            ]
-            
-            for min_val, max_val, desc in rangos_analisis:
-                if max_val == float('inf'):
-                    valores_en_rango = features[features >= min_val]
-                else:
-                    valores_en_rango = features[(features >= min_val) & (features < max_val)]
-                
-                if len(valores_en_rango) > 0:
-                    print(f"   📈 Rango {desc} [{min_val}-{max_val}): {len(valores_en_rango)} valores, ejemplo: {valores_en_rango[:3]}")
-            
-            # Buscar valores que podrían ser coordenadas de diferentes formas
-            # Coordenadas como enteros
-            coord_enteras = features[np.mod(features, 1) == 0]
-            if len(coord_enteras) > 0:
-                coord_validas = coord_enteras[(coord_enteras >= 0) & (coord_enteras <= 640)]
-                if len(coord_validas) > 0:
-                    print(f"   🎯 Coordenadas enteras válidas: {coord_validas[:5]}")
-            
-            # Coordenadas como flotantes con precisión específica
-            for precision in [0.1, 0.5, 1.0]:
-                coord_precision = features[np.abs(np.mod(features, precision)) < 0.01]
-                coord_validas = coord_precision[(coord_precision >= 0) & (coord_precision <= 640)]
-                if len(coord_validas) > 0:
-                    print(f"   🎯 Coordenadas con precisión {precision}: {coord_validas[:3]}")
-            
-        except Exception as e:
-            print(f"❌ Error en análisis avanzado de detección {deteccion_id}: {e}")
-    
-    def _decodificar_features(self, features: np.ndarray, deteccion_id: int) -> Dict:
+    def _sigmoid(self, x: np.ndarray) -> np.ndarray:
         """
-        Intenta decodificar las características a una detección válida
+        Aplicar función sigmoid para normalizar confianzas
         
         Args:
-            features: Array de 8400 características
-            deteccion_id: ID de la detección
+            x: Array de logits
             
         Returns:
-            Diccionario con la detección o None si falla
+            Array de confianzas normalizadas entre 0 y 1
         """
-        try:
-            # Estrategia 1: Buscar coordenadas en rangos específicos
-            deteccion = self._estrategia_coordenadas_directas(features, deteccion_id)
-            if deteccion:
-                return deteccion
-            
-            # Estrategia 2: Buscar coordenadas normalizadas
-            deteccion = self._estrategia_coordenadas_normalizadas(features, deteccion_id)
-            if deteccion:
-                return deteccion
-            
-            # Estrategia 3: Buscar patrones en los features
-            deteccion = self._estrategia_patrones_features(features, deteccion_id)
-            if deteccion:
-                return deteccion
-            
-            # Estrategia 4: Buscar coordenadas escaladas
-            deteccion = self._estrategia_coordenadas_escaladas(features, deteccion_id)
-            if deteccion:
-                return deteccion
-            
-            # Estrategia 5: Buscar coordenadas en clusters
-            deteccion = self._estrategia_clusters_coordenadas(features, deteccion_id)
-            if deteccion:
-                return deteccion
-            
-            print(f"⚠️ No se pudo decodificar detección {deteccion_id}")
-            return None
-            
-        except Exception as e:
-            print(f"❌ Error decodificando detección {deteccion_id}: {e}")
-            return None
+        # Clip para evitar overflow en exponencial
+        x_clipped = np.clip(x, -250, 250)
+        return 1 / (1 + np.exp(-x_clipped))
     
-    def _estrategia_coordenadas_directas(self, features: np.ndarray, deteccion_id: int) -> Dict:
-        """Estrategia 1: Buscar coordenadas directas (0-640)"""
-        # Buscar valores en rango de coordenadas
-        coord_candidates = features[(features >= 0) & (features <= 640)]
+    def _convert_to_xyxy(self, boxes_cxcywh: np.ndarray) -> np.ndarray:
+        """
+        Convertir de formato center_x, center_y, width, height a x1, y1, x2, y2
         
-        if len(coord_candidates) >= 4:
-            # Tomar las primeras 4 coordenadas
-            coords = coord_candidates[:4]
+        Args:
+            boxes_cxcywh: Array de cajas en formato (center_x, center_y, width, height)
             
-            # Intentar diferentes combinaciones
-            for j in range(0, len(coords), 2):
-                if j + 1 < len(coords):
-                    x1, y1 = coords[j], coords[j + 1]
-                    
-                    # Buscar x2, y2 en el resto
-                    remaining = [c for k, c in enumerate(coords) if k not in [j, j + 1]]
-                    if len(remaining) >= 2:
-                        x2, y2 = remaining[0], remaining[1]
-                        
-                        # Validar y crear detección
-                        deteccion = self._crear_deteccion_valida(x1, y1, x2, y2, features, deteccion_id)
-                        if deteccion:
-                            return deteccion
+        Returns:
+            Array de cajas en formato (x1, y1, x2, y2)
+        """
+        boxes_xyxy = np.zeros_like(boxes_cxcywh)
         
-        return None
-    
-    def _estrategia_coordenadas_normalizadas(self, features: np.ndarray, deteccion_id: int) -> Dict:
-        """Estrategia 2: Buscar coordenadas normalizadas (0.0-1.0)"""
-        # Buscar valores normalizados
-        norm_candidates = features[(features >= 0.0) & (features <= 1.0)]
+        # x1 = center_x - width/2
+        boxes_xyxy[:, 0] = boxes_cxcywh[:, 0] - boxes_cxcywh[:, 2] / 2
+        # y1 = center_y - height/2
+        boxes_xyxy[:, 1] = boxes_cxcywh[:, 1] - boxes_cxcywh[:, 3] / 2
+        # x2 = center_x + width/2
+        boxes_xyxy[:, 2] = boxes_cxcywh[:, 0] + boxes_cxcywh[:, 2] / 2
+        # y2 = center_y + height/2
+        boxes_xyxy[:, 3] = boxes_cxcywh[:, 1] + boxes_cxcywh[:, 3] / 2
         
-        if len(norm_candidates) >= 4:
-            # Convertir a píxeles
-            coords_pixels = []
-            for i, coord in enumerate(norm_candidates[:4]):
-                if i % 2 == 0:  # Coordenada X
-                    coords_pixels.append(int(coord * self.width))
-                else:  # Coordenada Y
-                    coords_pixels.append(int(coord * self.height))
-            
-            if len(coords_pixels) >= 4:
-                x1, y1, x2, y2 = coords_pixels[:4]
-                return self._crear_deteccion_valida(x1, y1, x2, y2, features, deteccion_id)
+        return boxes_xyxy
+    
+    def _scale_coordinates(self, coords: Tuple[float, float, float, float], 
+                          input_shape: Tuple[int, int], 
+                          original_shape: Tuple[int, int]) -> Tuple[float, float, float, float]:
+        """
+        Escalar coordenadas del tamaño de entrada al tamaño original
         
-        return None
-    
-    def _estrategia_patrones_features(self, features: np.ndarray, deteccion_id: int) -> Dict:
-        """Estrategia 3: Buscar patrones en los features"""
-        # Buscar valores que podrían ser coordenadas (múltiplos de 8, 16, 32)
-        for divisor in [8, 16, 32, 64]:
-            valores_divisibles = features[features % divisor == 0]
-            if len(valores_divisibles) >= 4:
-                coords = valores_divisibles[:4]
-                
-                # Intentar crear detección
-                if len(coords) >= 4:
-                    x1, y1, x2, y2 = coords[:4]
-                    deteccion = self._crear_deteccion_valida(x1, y1, x2, y2, features, deteccion_id)
-                    if deteccion:
-                        return deteccion
+        Args:
+            coords: Coordenadas (x1, y1, x2, y2)
+            input_shape: Tamaño de entrada del modelo (height, width)
+            original_shape: Tamaño original de la imagen (height, width)
+            
+        Returns:
+            Coordenadas escaladas
+        """
+        x1, y1, x2, y2 = coords
+        input_h, input_w = input_shape
+        orig_h, orig_w = original_shape
         
-        return None
-    
-    def _estrategia_coordenadas_escaladas(self, features: np.ndarray, deteccion_id: int) -> Dict:
-        """Estrategia 4: Buscar coordenadas escaladas (valores grandes divididos por factor)"""
-        try:
-            # Buscar valores que podrían ser coordenadas escaladas
-            # YOLOv11 podría usar coordenadas multiplicadas por un factor
-            for factor in [2, 4, 8, 16, 32, 64]:
-                # Dividir valores grandes por el factor
-                coords_escaladas = features / factor
-                
-                # Buscar coordenadas en rango válido después del escalado
-                coord_candidates = coords_escaladas[(coords_escaladas >= 0) & (coords_escaladas <= 640)]
-                
-                if len(coord_candidates) >= 4:
-                    coords = coord_candidates[:4]
-                    
-                    # Intentar diferentes combinaciones
-                    for j in range(0, len(coords), 2):
-                        if j + 1 < len(coords):
-                            x1, y1 = coords[j], coords[j + 1]
-                            
-                            # Buscar x2, y2 en el resto
-                            remaining = [c for k, c in enumerate(coords) if k not in [j, j + 1]]
-                            if len(remaining) >= 2:
-                                x2, y2 = remaining[0], remaining[1]
-                                
-                                # Validar y crear detección
-                                deteccion = self._crear_deteccion_valida(x1, y1, x2, y2, features, deteccion_id)
-                                if deteccion:
-                                    print(f"🔍 Detección {deteccion_id} - Escalada por factor {factor}")
-                                    return deteccion
-            
-            return None
-            
-        except Exception as e:
-            print(f"❌ Error en estrategia escalada para detección {deteccion_id}: {e}")
-            return None
-    
-    def _estrategia_clusters_coordenadas(self, features: np.ndarray, deteccion_id: int) -> Dict:
-        """Estrategia 5: Buscar coordenadas agrupadas en clusters"""
-        try:
-            # Buscar valores que podrían formar clusters de coordenadas
-            # YOLOv11 podría agrupar coordenadas relacionadas
-            
-            # Buscar valores en rangos específicos que podrían ser coordenadas
-            coord_ranges = [
-                (0, 100),      # Coordenadas pequeñas
-                (100, 300),    # Coordenadas medianas
-                (300, 500),    # Coordenadas grandes
-                (500, 640)     # Coordenadas muy grandes
-            ]
-            
-            for min_val, max_val in coord_ranges:
-                coords_en_rango = features[(features >= min_val) & (features <= max_val)]
-                
-                if len(coords_en_rango) >= 4:
-                    # Ordenar coordenadas por valor
-                    coords_ordenadas = np.sort(coords_en_rango)[:4]
-                    
-                    # Intentar crear bounding box con coordenadas ordenadas
-                    # Asumir que están en orden: x1, y1, x2, y2
-                    if len(coords_ordenadas) >= 4:
-                        x1, y1, x2, y2 = coords_ordenadas[:4]
-                        
-                        # Validar y crear detección
-                        deteccion = self._crear_deteccion_valida(x1, y1, x2, y2, features, deteccion_id)
-                        if deteccion:
-                            print(f"🔍 Detección {deteccion_id} - Cluster en rango [{min_val}, {max_val}]")
-                            return deteccion
-            
-            return None
-            
-        except Exception as e:
-            print(f"❌ Error en estrategia de clusters para detección {deteccion_id}: {e}")
-            return None
-    
-    def _crear_deteccion_valida(self, x1: float, y1: float, x2: float, y2: float, 
-                               features: np.ndarray, deteccion_id: int) -> Dict:
-        """Crea una detección válida si las coordenadas son correctas"""
-        try:
-            # Asegurar que x1 < x2 y y1 < y2
-            if x1 > x2:
-                x1, x2 = x2, x1
-            if y1 > y2:
-                y1, y2 = y2, y1
-            
-            # Validar coordenadas
-            if (x1 < x2 and y1 < y2 and 
-                x1 >= 0 and y1 >= 0 and 
-                x2 <= self.width and y2 <= self.height):
-                
-                # Calcular área
-                area = (x2 - x1) * (y2 - y1)
-                
-                # Validar área mínima
-                if area >= 10:
-                    # Estimar confianza (usar el valor máximo de los features)
-                    confianza = float(np.max(features))
-                    if confianza > 100:
-                        confianza = confianza / 100
-                    
-                    # Calcular centroide
-                    centroide_x = int((x1 + x2) // 2)
-                    centroide_y = int((y1 + y2) // 2)
-                    
-                    deteccion = {
-                        "clase": "Cople",
-                        "confianza": confianza,
-                        "bbox": {
-                            "x1": int(x1), "y1": int(y1),
-                            "x2": int(x2), "y2": int(y2)
-                        },
-                        "centroide": {
-                            "x": centroide_x,
-                            "y": centroide_y
-                        },
-                        "area": int(area)
-                    }
-                    
-                    print(f"✅ Detección {deteccion_id} decodificada: BBox({int(x1)},{int(y1)}) a ({int(x2)},{int(y2)}) - Conf: {confianza:.2%}")
-                    return deteccion
-            
-            return None
-            
-        except Exception as e:
-            print(f"❌ Error creando detección {deteccion_id}: {e}")
-            return None
+        # Calcular factores de escala
+        scale_x = orig_w / input_w
+        scale_y = orig_h / input_h
+        
+        # Aplicar escalado
+        x1 = x1 * scale_x
+        y1 = y1 * scale_y
+        x2 = x2 * scale_x
+        y2 = y2 * scale_y
+        
+        return x1, y1, x2, y2

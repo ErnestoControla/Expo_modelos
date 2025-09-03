@@ -24,7 +24,7 @@ class DetectorCoplesONNX:
     Basado en el motor de clasificación pero adaptado para detección
     """
     
-    def __init__(self, modelo_path: str, clases_path: str, confianza_min: float = 0.5):
+    def __init__(self, modelo_path: str, clases_path: str, confianza_min: float = 0.55):
         """
         Inicializa el detector ONNX
         
@@ -53,8 +53,12 @@ class DetectorCoplesONNX:
         # Inicializar
         self._inicializar_modelo()
         
-        # Inicializar decodificador YOLOv11
-        self.decoder = YOLOv11Decoder(self.input_shape)
+        # Inicializar decodificador YOLOv11 con parámetros más agresivos
+        self.decoder = YOLOv11Decoder(
+            confianza_min=0.55,  # Forzar umbral de 55% para mayor precisión
+            iou_threshold=0.35,  # Más agresivo para eliminar falsos positivos
+            max_det=30           # Reducido para mayor calidad
+        )
     
     def _cargar_clases(self) -> List[str]:
         """Carga las clases desde el archivo de texto"""
@@ -166,8 +170,11 @@ class DetectorCoplesONNX:
             self.tiempo_inferencia = tiempo_inferencia
             self.frames_procesados += 1
             
-            # Procesar salidas usando el decodificador YOLOv11
-            detecciones = self.decoder.decode_output(outputs[0])
+            # Obtener dimensiones de la imagen de entrada para el decodificador
+            imagen_height, imagen_width = imagen.shape[:2]
+            
+            # Procesar salidas usando el decodificador YOLOv11 con imagen_shape
+            detecciones = self.decoder.decode_output(outputs[0], (imagen_height, imagen_width))
             
             return detecciones
             
