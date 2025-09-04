@@ -495,7 +495,7 @@ class SistemaAnalisisIntegrado:
             
             # 4. Crear resultados
             resultados = {
-                "detecciones": detecciones,
+                "detecciones_piezas": detecciones,
                 "tiempos": {
                     "captura_ms": tiempo_captura,
                     "deteccion_ms": tiempo_deteccion,

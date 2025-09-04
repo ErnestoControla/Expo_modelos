@@ -417,8 +417,8 @@ def procesar_comando_solo_deteccion_piezas(sistema, ventana_cv):
         return True
     
     # Mostrar resultados
-    if "detecciones" in resultados:
-        detecciones = resultados["detecciones"]
+    if "detecciones_piezas" in resultados:
+        detecciones = resultados["detecciones_piezas"]
         print(f"\n🎯 DETECCIÓN DE PIEZAS:")
         print(f"   Piezas detectadas: {len(detecciones)}")
         
@@ -440,9 +440,9 @@ def procesar_comando_solo_deteccion_piezas(sistema, ventana_cv):
     print("=" * 60)
     
     # Mostrar imagen con detecciones
-    if "frame" in resultados and "detecciones" in resultados:
+    if "frame" in resultados and "detecciones_piezas" in resultados:
         frame = resultados["frame"]
-        detecciones = resultados["detecciones"]
+        detecciones = resultados["detecciones_piezas"]
         
         # Crear imagen anotada con detecciones
         procesador_deteccion = sistema.sistema_integrado.procesador_deteccion_piezas
