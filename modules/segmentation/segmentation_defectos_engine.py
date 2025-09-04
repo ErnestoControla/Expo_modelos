@@ -206,7 +206,7 @@ class SegmentadorDefectosCoples:
                 
                 # Configurar timeout de 3 segundos (ultra-agresivo)
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(3)
+                signal.alarm(1)  # Timeout agresivo para análisis completo
                 
                 try:
                     outputs = self.session.run(

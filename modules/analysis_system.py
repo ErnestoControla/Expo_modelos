@@ -225,12 +225,26 @@ class SistemaAnalisisIntegrado:
             print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
             print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
             
-            tiempo_deteccion_piezas_inicio = time.time()
-            detecciones_piezas = self.detector_piezas.detectar_piezas(frame)
-            tiempo_deteccion_piezas = (time.time() - tiempo_deteccion_piezas_inicio) * 1000
-            print(f"✅ Detección de piezas completada en {tiempo_deteccion_piezas:.2f} ms")
-            print(f"   Piezas detectadas: {len(detecciones_piezas)}")
-            print(f"   🔍 Frame ID después de detección de piezas: {id(frame)}")
+            # SOLUCIÓN CRÍTICA: Reinicializar detector de piezas antes de usar
+            print("   🔧 Reinicializando detector de piezas...")
+            try:
+                self.detector_piezas.liberar()
+                # Crear nueva instancia del detector de piezas
+                from modules.detection.detection_engine import DetectorPiezasCoples
+                self.detector_piezas = DetectorPiezasCoples(confianza_min=0.55)
+                print("   ✅ Detector de piezas reinicializado correctamente")
+                
+                tiempo_deteccion_piezas_inicio = time.time()
+                detecciones_piezas = self.detector_piezas.detectar_piezas(frame)
+                tiempo_deteccion_piezas = (time.time() - tiempo_deteccion_piezas_inicio) * 1000
+                print(f"✅ Detección de piezas completada en {tiempo_deteccion_piezas:.2f} ms")
+                print(f"   Piezas detectadas: {len(detecciones_piezas)}")
+                print(f"   🔍 Frame ID después de detección de piezas: {id(frame)}")
+                
+            except Exception as e:
+                print(f"❌ ERROR en detección de piezas: {e}")
+                detecciones_piezas = []
+                tiempo_deteccion_piezas = 0
             
             # 5. DETECCIÓN DE DEFECTOS (SECUENCIAL)
             print("\n🔍 EJECUTANDO DETECCIÓN DE DEFECTOS...")
@@ -239,17 +253,66 @@ class SistemaAnalisisIntegrado:
             print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
             print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
             print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
+            print(f"   ID del objeto: {id(frame)}")
             
-            tiempo_deteccion_defectos_inicio = time.time()
-            detecciones_defectos = self.detector_defectos.detectar_defectos(frame)
-            tiempo_deteccion_defectos = (time.time() - tiempo_deteccion_defectos_inicio) * 1000
-            print(f"✅ Detección de defectos completada en {tiempo_deteccion_defectos:.2f} ms")
-            print(f"   Defectos detectados: {len(detecciones_defectos)}")
+            # SOLUCIÓN CRÍTICA: Reinicializar detector de defectos antes de usar
+            print("   🔧 Reinicializando detector de defectos...")
+            try:
+                self.detector_defectos.liberar()
+                if not self.detector_defectos.inicializar():
+                    print("❌ Error reinicializando detector de defectos")
+                    detecciones_defectos = []
+                    tiempo_deteccion_defectos = 0
+                else:
+                    print("   ✅ Detector de defectos reinicializado correctamente")
+                    
+                    tiempo_deteccion_defectos_inicio = time.time()
+                    detecciones_defectos = self.detector_defectos.detectar_defectos(frame)
+                    tiempo_deteccion_defectos = (time.time() - tiempo_deteccion_defectos_inicio) * 1000
+                    print(f"✅ Detección de defectos completada en {tiempo_deteccion_defectos:.2f} ms")
+                    print(f"   Defectos detectados: {len(detecciones_defectos)}")
+                    
+            except Exception as e:
+                print(f"❌ ERROR en detección de defectos: {e}")
+                print(f"   🔍 Frame original intacto - ID: {id(frame)}")
+                detecciones_defectos = []
+                tiempo_deteccion_defectos = (time.time() - tiempo_deteccion_defectos_inicio) * 1000
             
-            # 6. Calcular tiempo total
+            # 6. SEGMENTACIÓN DE DEFECTOS (SECUENCIAL)
+            print("\n🎨 EJECUTANDO SEGMENTACIÓN DE DEFECTOS...")
+            print(f"🔍 DEBUG - Frame para segmentación:")
+            print(f"   Tipo: {type(frame)}")
+            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
+            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
+            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
+            print(f"   ID del objeto: {id(frame)}")
+            
+            # SOLUCIÓN CRÍTICA: Reinicializar segmentador antes de usar
+            print("   🔧 Reinicializando segmentador de defectos...")
+            tiempo_segmentacion_inicio = time.time()  # Inicializar antes del try
+            try:
+                self.segmentador_defectos.liberar()
+                # Crear nueva instancia del segmentador
+                from modules.segmentation.segmentation_defectos_engine import SegmentadorDefectosCoples
+                self.segmentador_defectos = SegmentadorDefectosCoples(confianza_min=0.55)
+                print("   ✅ Segmentador de defectos reinicializado correctamente")
+                
+                tiempo_segmentacion_inicio = time.time()
+                segmentaciones_defectos = self.segmentador_defectos.segmentar_defectos(frame)
+                tiempo_segmentacion = (time.time() - tiempo_segmentacion_inicio) * 1000
+                print(f"✅ Segmentación de defectos completada en {tiempo_segmentacion:.2f} ms")
+                print(f"   Segmentaciones detectadas: {len(segmentaciones_defectos)}")
+                
+            except Exception as e:
+                print(f"❌ ERROR en segmentación de defectos: {e}")
+                print(f"   🔍 Frame original intacto - ID: {id(frame)}")
+                segmentaciones_defectos = []
+                tiempo_segmentacion = (time.time() - tiempo_segmentacion_inicio) * 1000
+            
+            # 7. Calcular tiempo total
             tiempo_total = (time.time() - tiempo_inicio_total) * 1000
             
-            # 7. Crear resultados
+            # 8. Crear resultados
             resultados = {
                 "clasificacion": {
                     "clase": clase_predicha,
@@ -258,22 +321,24 @@ class SistemaAnalisisIntegrado:
                 },
                 "detecciones_piezas": detecciones_piezas,
                 "detecciones_defectos": detecciones_defectos,
+                "segmentaciones_defectos": segmentaciones_defectos,
                 "tiempos": {
                     "captura_ms": tiempo_captura,
                     "clasificacion_ms": tiempo_clasificacion,
                     "deteccion_piezas_ms": tiempo_deteccion_piezas,
                     "deteccion_defectos_ms": tiempo_deteccion_defectos,
+                    "segmentacion_ms": tiempo_segmentacion,
                     "total_ms": tiempo_total
                 },
                 "frame": frame,
                 "timestamp_captura": timestamp_captura
             }
             
-            # 8. Guardar resultados por módulo
+            # 9. Guardar resultados por módulo
             print("\n💾 GUARDANDO RESULTADOS...")
             self._guardar_por_modulos(resultados)
             
-            # 9. Reanudar captura continua
+            # 10. Reanudar captura continua
             print("▶️ Reanudando captura continua...")
             self.camara.reanudar_captura_continua()
             

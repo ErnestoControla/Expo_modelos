@@ -157,15 +157,35 @@ class DetectorCoplesONNX:
             # Debug: Mostrar tamaño de imagen procesada
             print(f"🔍 Debug imagen - Procesada: {imagen_input.shape}")
             
-            # Ejecutar inferencia
+            # Ejecutar inferencia con TIMEOUT CRÍTICO
             tiempo_inicio = time.time()
             
-            outputs = self.session.run(
-                self.output_names,
-                {self.input_name: imagen_input}
-            )
+            # TIMEOUT: Evitar que se cuelgue durante análisis completo
+            import signal
             
-            tiempo_inferencia = (time.time() - tiempo_inicio) * 1000  # ms
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Timeout en detección de piezas")
+            
+            # Configurar timeout de 10 segundos
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(10)
+            
+            try:
+                outputs = self.session.run(
+                    self.output_names,
+                    {self.input_name: imagen_input}
+                )
+                signal.alarm(0)  # Cancelar timeout
+                
+                tiempo_inferencia = (time.time() - tiempo_inicio) * 1000  # ms
+                
+            except TimeoutError:
+                print("⚠️  Timeout en detección de piezas, usando fallback")
+                signal.alarm(0)
+                return []
+            except Exception as e:
+                signal.alarm(0)
+                raise e
             
             # Actualizar estadísticas
             self.tiempo_inferencia = tiempo_inferencia
