@@ -212,21 +212,23 @@ def mostrar_menu():
     print("\n" + "="*60)
     print("🎯 ANÁLISIS DISPONIBLE:")
     print("="*60)
-    print("  1. Análisis Completo (Clasificación + Detección de Piezas + Defectos + Segmentación)")
+    print("  1. Análisis Completo (Clasificación + Detección de Piezas + Defectos + Segmentación de Defectos + Segmentación de Piezas)")
     print("  2. Solo Clasificación")
     print("  3. Solo Detección de Piezas")
     print("  4. Solo Detección de Defectos")
     print("  5. Solo Segmentación de Defectos")
-    print("  6. Solo Ver Frame")
-    print("  7. Estadísticas del Sistema")
-    print("  8. Configuración")
-    print("  9. Salir del Sistema")
+    print("  6. Solo Segmentación de Piezas")
+    print("  7. Solo Ver Frame")
+    print("  8. Estadísticas del Sistema")
+    print("  9. Configuración")
+    print("  10. Salir del Sistema")
     print("="*60)
     print("  ENTER - Opción 1 (Análisis Completo)")
     print("  '2'   - Solo Clasificación")
     print("  '3'   - Solo Detección de Piezas")
     print("  '4'   - Solo Detección de Defectos")
     print("  '5'   - Solo Segmentación de Defectos")
+    print("  '6'   - Solo Segmentación de Piezas")
     print("  'v'   - Solo Ver Frame")
     print("  's'   - Estadísticas")
     print("  'c'   - Configuración")
@@ -291,6 +293,21 @@ def procesar_comando_analisis_completo(sistema, ventana_cv):
             print(f"     BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
             print(f"     Centroide: ({centroide['x']}, {centroide['y']})")
     
+    # Mostrar resultados de segmentación de piezas
+    if "segmentaciones_piezas" in resultados:
+        segmentaciones_piezas = resultados["segmentaciones_piezas"]
+        print(f"\n🎨 SEGMENTACIÓN DE PIEZAS:")
+        print(f"   Segmentaciones detectadas: {len(segmentaciones_piezas)}")
+        
+        for i, segmentacion in enumerate(segmentaciones_piezas):
+            bbox = segmentacion["bbox"]
+            centroide = segmentacion["centroide"]
+            print(f"   Segmentación #{i+1}: {segmentacion['clase']} - {segmentacion['confianza']:.2%}")
+            print(f"     BBox: ({bbox['x1']}, {bbox['y1']}) a ({bbox['x2']}, {bbox['y2']})")
+            print(f"     Centroide: ({centroide['x']}, {centroide['y']})")
+            print(f"     Área: {segmentacion['area']}")
+            print(f"     Dimensiones máscara: {segmentacion['ancho_mascara']}x{segmentacion['alto_mascara']}")
+    
     # Mostrar tiempos
     if "tiempos" in resultados:
         tiempos = resultados["tiempos"]
@@ -299,6 +316,8 @@ def procesar_comando_analisis_completo(sistema, ventana_cv):
         print(f"   Clasificación: {tiempos.get('clasificacion_ms', 0):.2f} ms")
         print(f"   Detección Piezas: {tiempos.get('deteccion_piezas_ms', 0):.2f} ms")
         print(f"   Detección Defectos: {tiempos.get('deteccion_defectos_ms', 0):.2f} ms")
+        print(f"   Segmentación Defectos: {tiempos.get('segmentacion_defectos_ms', 0):.2f} ms")
+        print(f"   Segmentación Piezas: {tiempos.get('segmentacion_piezas_ms', 0):.2f} ms")
         print(f"   Total:         {tiempos.get('total_ms', 0):.2f} ms")
     
     print("=" * 60)
@@ -563,6 +582,66 @@ def procesar_comando_solo_segmentacion_defectos(sistema, ventana_cv):
     return True
 
 
+def procesar_comando_solo_segmentacion_piezas(sistema, ventana_cv):
+    """
+    Procesa el comando de solo segmentación de piezas.
+    
+    Args:
+        sistema (SistemaAnalisisCoples): Sistema principal
+        ventana_cv (str): Nombre de la ventana OpenCV
+    """
+    print("\n🎯 REALIZANDO SOLO SEGMENTACIÓN DE PIEZAS...")
+    
+    # Usar sistema integrado para solo segmentación de piezas
+    resultados = sistema.sistema_integrado.solo_segmentacion_piezas()
+    
+    if "error" in resultados:
+        print(f"❌ Error en segmentación de piezas: {resultados['error']}")
+        return True
+    
+    # Mostrar resultados de segmentación de piezas
+    if "segmentaciones_piezas" in resultados:
+        segmentaciones_piezas = resultados["segmentaciones_piezas"]
+        print(f"\n🎯 SEGMENTACIÓN DE PIEZAS:")
+        print(f"   Segmentaciones detectadas: {len(segmentaciones_piezas)}")
+        for i, seg in enumerate(segmentaciones_piezas):
+            print(f"   Segmentación #{i+1}: {seg['clase']} - {seg['confianza']:.2%}")
+            print(f"     BBox: ({seg['bbox']['x1']}, {seg['bbox']['y1']}) a ({seg['bbox']['x2']}, {seg['bbox']['y2']})")
+            print(f"     Centroide: ({seg['centroide']['x']}, {seg['centroide']['y']})")
+            print(f"     Área: {seg['area']}")
+            print(f"     Dimensiones máscara: {seg['ancho_mascara']}x{seg['alto_mascara']}")
+    
+    # Mostrar tiempos
+    if "tiempos" in resultados:
+        tiempos = resultados["tiempos"]
+        print(f"\n⏱️  TIEMPOS:")
+        print(f"   Captura:      {tiempos['captura_ms']:.2f} ms")
+        print(f"   Segmentación: {tiempos['segmentacion_ms']:.2f} ms")
+        print(f"   Total:        {tiempos['total_ms']:.2f} ms")
+    
+    print("=" * 60)
+    
+    # Mostrar imagen con segmentaciones (si hay)
+    if "frame" in resultados:
+        frame = resultados["frame"]
+        
+        # Crear imagen anotada con segmentaciones de piezas
+        if "segmentaciones_piezas" in resultados and resultados["segmentaciones_piezas"]:
+            frame_anotado = sistema.sistema_integrado.procesador_segmentacion_piezas._crear_visualizacion(
+                frame, resultados["segmentaciones_piezas"]
+            )
+            
+            # Mostrar imagen
+            cv2.imshow(ventana_cv, frame_anotado)
+            cv2.waitKey(1)
+        else:
+            # Mostrar imagen sin anotaciones
+            cv2.imshow(ventana_cv, frame)
+            cv2.waitKey(1)
+    
+    return True
+
+
 def procesar_comando_clasificacion(sistema, ventana_cv):
     """
     Procesa el comando de captura y clasificación.
@@ -764,6 +843,11 @@ def main():
             elif entrada == '5':
                 # Solo Segmentación de Defectos
                 if not procesar_comando_solo_segmentacion_defectos(sistema, ventana_cv):
+                    break
+            
+            elif entrada == '6':
+                # Solo Segmentación de Piezas
+                if not procesar_comando_solo_segmentacion_piezas(sistema, ventana_cv):
                     break
             
             elif entrada == 'help' or entrada == 'h':

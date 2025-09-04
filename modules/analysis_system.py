@@ -18,6 +18,8 @@ from modules.capture import CamaraTiempoOptimizada
 from modules.classification import ClasificadorCoplesONNX, ProcesadorImagenClasificacion
 from modules.detection import DetectorPiezasCoples, ProcesadorPiezasCoples, DetectorDefectosCoples, ProcesadorDefectos
 from modules.segmentation import SegmentadorDefectosCoples, ProcesadorSegmentacionDefectos
+from modules.segmentation.segmentation_piezas_engine import SegmentadorPiezasCoples
+from modules.segmentation.piezas_segmentation_processor import ProcesadorSegmentacionPiezas
 from config import GlobalConfig
 
 
@@ -34,10 +36,12 @@ class SistemaAnalisisIntegrado:
         self.detector_piezas = None
         self.detector_defectos = None
         self.segmentador_defectos = None
+        self.segmentador_piezas = None
         self.procesador_clasificacion = None
         self.procesador_deteccion_piezas = None
         self.procesador_deteccion_defectos = None
         self.procesador_segmentacion_defectos = None
+        self.procesador_segmentacion_piezas = None
         
         # Estado del sistema
         self.inicializado = False
@@ -103,7 +107,15 @@ class SistemaAnalisisIntegrado:
                 return False
             self.procesador_segmentacion_defectos = ProcesadorSegmentacionDefectos()
             
-            # 6. Iniciar captura continua
+            # 6. Inicializar segmentador de piezas
+            print("🎯 Inicializando segmentador de piezas...")
+            self.segmentador_piezas = SegmentadorPiezasCoples()
+            if not self.segmentador_piezas.stats['inicializado']:
+                print("❌ Error inicializando segmentador de piezas")
+                return False
+            self.procesador_segmentacion_piezas = ProcesadorSegmentacionPiezas()
+            
+            # 7. Iniciar captura continua
             print("🎬 Iniciando captura continua...")
             if not self.camara.iniciar_captura_continua():
                 print("❌ Error iniciando captura continua")
@@ -309,6 +321,41 @@ class SistemaAnalisisIntegrado:
                 segmentaciones_defectos = []
                 tiempo_segmentacion = (time.time() - tiempo_segmentacion_inicio) * 1000
             
+            # 6. SEGMENTACIÓN DE PIEZAS (SECUENCIAL)
+            print("\n🎨 EJECUTANDO SEGMENTACIÓN DE PIEZAS...")
+            print(f"🔍 DEBUG - Frame para segmentación de piezas:")
+            print(f"   Tipo: {type(frame)}")
+            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
+            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
+            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
+            print(f"   ID del objeto: {id(frame)}")
+            
+            # SOLUCIÓN CRÍTICA: Reinicializar segmentador de piezas antes de usar
+            print("   🔧 Reinicializando segmentador de piezas...")
+            try:
+                self.segmentador_piezas.liberar()
+                # Recrear segmentador de piezas
+                from modules.segmentation.segmentation_piezas_engine import SegmentadorPiezasCoples
+                self.segmentador_piezas = SegmentadorPiezasCoples()
+                if not self.segmentador_piezas.stats['inicializado']:
+                    print("   ❌ Error reinicializando segmentador de piezas")
+                    segmentaciones_piezas = []
+                    tiempo_segmentacion_piezas = 0
+                else:
+                    print("   ✅ Segmentador de piezas reinicializado correctamente")
+                    
+                    tiempo_segmentacion_piezas_inicio = time.time()
+                    segmentaciones_piezas = self.segmentador_piezas.segmentar(frame)
+                    tiempo_segmentacion_piezas = (time.time() - tiempo_segmentacion_piezas_inicio) * 1000
+                    print(f"✅ Segmentación de piezas completada en {tiempo_segmentacion_piezas:.2f} ms")
+                    print(f"   Segmentaciones detectadas: {len(segmentaciones_piezas)}")
+                
+            except Exception as e:
+                print(f"❌ ERROR en segmentación de piezas: {e}")
+                print(f"   🔍 Frame original intacto - ID: {id(frame)}")
+                segmentaciones_piezas = []
+                tiempo_segmentacion_piezas = 0
+            
             # 7. Calcular tiempo total
             tiempo_total = (time.time() - tiempo_inicio_total) * 1000
             
@@ -322,12 +369,14 @@ class SistemaAnalisisIntegrado:
                 "detecciones_piezas": detecciones_piezas,
                 "detecciones_defectos": detecciones_defectos,
                 "segmentaciones_defectos": segmentaciones_defectos,
+                "segmentaciones_piezas": segmentaciones_piezas,
                 "tiempos": {
                     "captura_ms": tiempo_captura,
                     "clasificacion_ms": tiempo_clasificacion,
                     "deteccion_piezas_ms": tiempo_deteccion_piezas,
                     "deteccion_defectos_ms": tiempo_deteccion_defectos,
-                    "segmentacion_ms": tiempo_segmentacion,
+                    "segmentacion_defectos_ms": tiempo_segmentacion,
+                    "segmentacion_piezas_ms": tiempo_segmentacion_piezas,
                     "total_ms": tiempo_total
                 },
                 "frame": frame,
@@ -567,6 +616,74 @@ class SistemaAnalisisIntegrado:
             print(f"❌ Error en segmentación de defectos: {e}")
             return {"error": str(e)}
     
+    def solo_segmentacion_piezas(self) -> Dict:
+        """
+        Realiza solo segmentación de piezas (sin clasificación ni detección)
+        
+        Returns:
+            Diccionario con resultados de segmentación de piezas
+        """
+        if not self.inicializado:
+            return {"error": "Sistema no inicializado"}
+        
+        try:
+            # 1. Capturar imagen única
+            resultado_captura = self.capturar_imagen_unica()
+            if "error" in resultado_captura:
+                return resultado_captura
+            
+            frame = resultado_captura["frame"]
+            timestamp_captura = resultado_captura["timestamp_captura"]
+            tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
+            
+            tiempo_inicio = time.time()
+            
+            # 2. Segmentación de piezas
+            tiempo_segmentacion_inicio = time.time()
+            segmentaciones_piezas = self.segmentador_piezas.segmentar(frame)
+            tiempo_segmentacion = (time.time() - tiempo_segmentacion_inicio) * 1000
+            
+            # 3. Calcular tiempo total
+            tiempo_total = (time.time() - tiempo_inicio) * 1000
+            
+            # 4. Crear resultados
+            resultados = {
+                "frame": frame,
+                "timestamp_captura": timestamp_captura,
+                "segmentaciones_piezas": segmentaciones_piezas,
+                "tiempos": {
+                    "captura_ms": tiempo_captura,
+                    "segmentacion_ms": tiempo_segmentacion,
+                    "total_ms": tiempo_total
+                }
+            }
+            
+            # 5. Procesar y guardar resultados
+            self.procesador_segmentacion_piezas.procesar_segmentaciones(
+                frame, segmentaciones_piezas, timestamp_captura
+            )
+            
+            # 6. Mostrar resultados
+            print(f"\n🎯 SEGMENTACIÓN DE PIEZAS:")
+            print(f"   Segmentaciones detectadas: {len(segmentaciones_piezas)}")
+            for i, seg in enumerate(segmentaciones_piezas):
+                print(f"   Segmentación #{i+1}: {seg['clase']} - {seg['confianza']:.2%}")
+                print(f"     BBox: ({seg['bbox']['x1']}, {seg['bbox']['y1']}) a ({seg['bbox']['x2']}, {seg['bbox']['y2']})")
+                print(f"     Centroide: ({seg['centroide']['x']}, {seg['centroide']['y']})")
+                print(f"     Área: {seg['area']}")
+                print(f"     Dimensiones máscara: {seg['ancho_mascara']}x{seg['alto_mascara']}")
+            
+            print(f"\n⏱️  TIEMPOS:")
+            print(f"   Captura:      {tiempo_captura:.2f} ms")
+            print(f"   Segmentación: {tiempo_segmentacion:.2f} ms")
+            print(f"   Total:        {tiempo_total:.2f} ms")
+            
+            return resultados
+            
+        except Exception as e:
+            print(f"❌ Error en segmentación de piezas: {e}")
+            return {"error": str(e)}
+    
     def _guardar_por_modulos(self, resultados: Dict):
         """Guarda resultados por módulos en carpetas separadas"""
         try:
@@ -588,6 +705,10 @@ class SistemaAnalisisIntegrado:
             # 4. Guardar segmentación de defectos (si existe)
             if "segmentaciones_defectos" in resultados:
                 self._guardar_segmentacion_defectos_modulo(resultados, timestamp_captura)
+            
+            # 5. Guardar segmentación de piezas (si existe)
+            if "segmentaciones_piezas" in resultados:
+                self._guardar_segmentacion_piezas_modulo(resultados, timestamp_captura)
             
             print(f"✅ Resultados #{self.contador_resultados} guardados por módulos")
             
@@ -688,19 +809,35 @@ class SistemaAnalisisIntegrado:
         except Exception as e:
             print(f"❌ Error guardando segmentación de defectos: {e}")
     
+    def _guardar_segmentacion_piezas_modulo(self, resultados: Dict, timestamp_captura: str):
+        """Guarda resultados de segmentación de piezas en su módulo específico"""
+        try:
+            # Guardar segmentación de piezas en módulo específico
+            self.procesador_segmentacion_piezas.procesar_segmentaciones(
+                resultados["frame"],
+                resultados["segmentaciones_piezas"],
+                timestamp_captura
+            )
+            
+            print(f"   📁 Segmentación de piezas guardada en: {self.directorios_salida['segmentacion_piezas']}")
+            
+        except Exception as e:
+            print(f"❌ Error guardando segmentación de piezas: {e}")
+    
     def obtener_estadisticas(self) -> Dict:
         """Retorna estadísticas del sistema"""
         if not self.inicializado:
             return {"error": "Sistema no inicializado"}
         
         stats = {
-            "sistema": "Integrado (Clasificación + Detección de Piezas + Detección de Defectos + Segmentación de Defectos)",
+            "sistema": "Integrado (Clasificación + Detección de Piezas + Detección de Defectos + Segmentación de Defectos + Segmentación de Piezas)",
             "resultados_procesados": self.contador_resultados,
             "camara": self.camara.obtener_estadisticas() if self.camara else {},
             "clasificador": self.clasificador.obtener_estadisticas() if self.clasificador else {},
             "detector_piezas": self.detector_piezas.obtener_estadisticas() if self.detector_piezas else {},
             "detector_defectos": self.detector_defectos.obtener_estadisticas() if self.detector_defectos else {},
-            "segmentador_defectos": self.segmentador_defectos.obtener_estadisticas() if self.segmentador_defectos else {}
+            "segmentador_defectos": self.segmentador_defectos.obtener_estadisticas() if self.segmentador_defectos else {},
+            "segmentador_piezas": self.segmentador_piezas.obtener_estadisticas() if self.segmentador_piezas else {}
         }
         
         return stats
@@ -724,6 +861,9 @@ class SistemaAnalisisIntegrado:
             
             if self.segmentador_defectos:
                 self.segmentador_defectos.liberar()
+            
+            if self.segmentador_piezas:
+                self.segmentador_piezas.liberar()
             
             self.inicializado = False
             print("✅ Recursos del sistema integrado liberados")
