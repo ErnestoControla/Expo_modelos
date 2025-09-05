@@ -24,7 +24,7 @@ class DetectorCoplesONNX:
     Basado en el motor de clasificación pero adaptado para detección
     """
     
-    def __init__(self, modelo_path: str, clases_path: str, confianza_min: float = 0.55):
+    def __init__(self, modelo_path: str, clases_path: str, confianza_min: float = 0.3):
         """
         Inicializa el detector ONNX
         
@@ -53,9 +53,9 @@ class DetectorCoplesONNX:
         # Inicializar
         self._inicializar_modelo()
         
-        # Inicializar decodificador YOLOv11 con parámetros más agresivos
+        # Inicializar decodificador YOLOv11
         self.decoder = YOLOv11Decoder(
-            confianza_min=0.55,  # Forzar umbral de 55% para mayor precisión
+            confianza_min=self.confianza_min,  # Usar el umbral configurado
             iou_threshold=0.35,  # Más agresivo para eliminar falsos positivos
             max_det=30,          # Reducido para mayor calidad
             class_names=self.clases  # Pasar las clases del detector de piezas
@@ -366,6 +366,23 @@ class DetectorCoplesONNX:
             print(f"   Formato de salida: {[out.shape for out in outputs]}")
         
         return detecciones
+    
+    def actualizar_umbrales(self, confianza_min: float = None, iou_threshold: float = None):
+        """
+        Actualiza los umbrales del detector y del decoder
+        
+        Args:
+            confianza_min: Nuevo umbral de confianza
+            iou_threshold: Nuevo umbral de IoU
+        """
+        if confianza_min is not None:
+            self.confianza_min = confianza_min
+            self.decoder.confianza_min = confianza_min
+            print(f"✅ Umbral de confianza actualizado: {confianza_min}")
+        
+        if iou_threshold is not None:
+            self.decoder.iou_threshold = iou_threshold
+            print(f"✅ Umbral de IoU actualizado: {iou_threshold}")
     
     def obtener_estadisticas(self) -> Dict:
         """Retorna estadísticas del detector"""

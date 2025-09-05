@@ -20,7 +20,9 @@ from modules.detection import DetectorPiezasCoples, ProcesadorPiezasCoples, Dete
 from modules.segmentation import SegmentadorDefectosCoples, ProcesadorSegmentacionDefectos
 from modules.segmentation.segmentation_piezas_engine import SegmentadorPiezasCoples
 from modules.segmentation.piezas_segmentation_processor import ProcesadorSegmentacionPiezas
-from config import GlobalConfig
+from modules.preprocessing.illumination_robust import RobustezIluminacion
+from modules.adaptive_thresholds import UmbralesAdaptativos
+from config import GlobalConfig, RobustezConfig
 
 
 class SistemaAnalisisIntegrado:
@@ -42,6 +44,10 @@ class SistemaAnalisisIntegrado:
         self.procesador_deteccion_defectos = None
         self.procesador_segmentacion_defectos = None
         self.procesador_segmentacion_piezas = None
+        
+        # Componentes de robustez
+        self.robustez_iluminacion = RobustezIluminacion()
+        self.umbrales_adaptativos = UmbralesAdaptativos()
         
         # Estado del sistema
         self.inicializado = False
@@ -120,6 +126,10 @@ class SistemaAnalisisIntegrado:
             if not self.camara.iniciar_captura_continua():
                 print("❌ Error iniciando captura continua")
                 return False
+            
+            # 7. Aplicar configuración de robustez por defecto
+            print("🔧 Aplicando configuración de robustez por defecto...")
+            self.aplicar_configuracion_robustez("moderada")
             
             self.inicializado = True
             print("✅ Sistema integrado inicializado correctamente")
@@ -870,3 +880,166 @@ class SistemaAnalisisIntegrado:
             
         except Exception as e:
             print(f"❌ Error liberando recursos: {e}")
+    
+    def preprocesar_imagen_robusta(self, imagen: np.ndarray) -> Tuple[np.ndarray, Dict[str, float]]:
+        """
+        Preprocesa la imagen con técnicas de robustez ante iluminación
+        
+        Args:
+            imagen (np.ndarray): Imagen de entrada (BGR)
+            
+        Returns:
+            Tuple[np.ndarray, Dict[str, float]]: Imagen preprocesada y métricas de iluminación
+        """
+        try:
+            print("🔧 Aplicando preprocesamiento robusto...")
+            
+            # Analizar iluminación
+            metrics = self.robustez_iluminacion.analizar_iluminacion(imagen)
+            print(f"   📊 Brillo: {metrics.get('brightness', 0):.1f}")
+            print(f"   📊 Contraste: {metrics.get('contrast', 0):.1f}")
+            
+            # Obtener recomendaciones
+            recommendations = self.robustez_iluminacion.recomendar_ajustes(imagen)
+            
+            # Aplicar preprocesamiento
+            imagen_robusta = self.robustez_iluminacion.preprocesar_imagen_robusta(
+                imagen,
+                aplicar_clahe=recommendations.get('aplicar_clahe', True),
+                aplicar_gamma=recommendations.get('aplicar_gamma', True),
+                aplicar_contraste=recommendations.get('aplicar_contraste', True)
+            )
+            
+            print("✅ Preprocesamiento robusto completado")
+            return imagen_robusta, metrics
+            
+        except Exception as e:
+            print(f"❌ Error en preprocesamiento robusto: {e}")
+            return imagen, {}
+    
+    def obtener_umbrales_adaptativos(self, metrics: Dict[str, float], 
+                                   detecciones_actuales: int = 0) -> Dict[str, float]:
+        """
+        Obtiene umbrales adaptativos basándose en las condiciones de iluminación
+        
+        Args:
+            metrics (Dict[str, float]): Métricas de iluminación
+            detecciones_actuales (int): Número de detecciones actuales
+            
+        Returns:
+            Dict[str, float]: Umbrales adaptativos
+        """
+        try:
+            brightness = metrics.get('brightness', 128.0)
+            contrast = metrics.get('contrast', 50.0)
+            
+            # Obtener umbrales híbridos
+            umbrales = self.umbrales_adaptativos.obtener_umbrales_hibridos(
+                brightness, contrast, detecciones_actuales
+            )
+            
+            print(f"   🎯 Umbrales adaptativos:")
+            print(f"      Confianza: {umbrales['confianza_min']:.3f}")
+            print(f"      Área mínima: {umbrales['area_minima']:.0f}")
+            print(f"      Cobertura mínima: {umbrales['cobertura_minima']:.3f}")
+            
+            return umbrales
+            
+        except Exception as e:
+            print(f"❌ Error obteniendo umbrales adaptativos: {e}")
+            return {
+                'confianza_min': 0.5,
+                'area_minima': 500,
+                'cobertura_minima': 0.1
+            }
+    
+    def aplicar_configuracion_robustez(self, configuracion: str = "moderada"):
+        """
+        Aplica una configuración de robustez específica
+        
+        Args:
+            configuracion (str): Tipo de configuración ('original', 'moderada', 'permisiva', 'ultra_permisiva')
+        """
+        try:
+            # Obtener configuración
+            if configuracion == "original":
+                config = RobustezConfig.UMBRALES_ORIGINAL
+            elif configuracion == "moderada":
+                config = RobustezConfig.UMBRALES_MODERADA
+            elif configuracion == "permisiva":
+                config = RobustezConfig.UMBRALES_PERMISIVA
+            elif configuracion == "ultra_permisiva":
+                config = RobustezConfig.UMBRALES_ULTRA_PERMISIVA
+            else:
+                print(f"⚠️ Configuración '{configuracion}' no reconocida, usando moderada")
+                config = RobustezConfig.UMBRALES_MODERADA
+            
+            print(f"🔧 Aplicando configuración de robustez: {config['descripcion']}")
+            print(f"   Confianza mínima: {config['confianza_min']}")
+            print(f"   IoU threshold: {config['iou_threshold']}")
+            
+            # Aplicar a detectores
+            if self.detector_piezas:
+                self.detector_piezas.actualizar_umbrales(
+                    confianza_min=config['confianza_min'],
+                    iou_threshold=config['iou_threshold']
+                )
+            
+            if self.detector_defectos:
+                self.detector_defectos.actualizar_umbrales(
+                    confianza_min=config['confianza_min'],
+                    iou_threshold=config['iou_threshold']
+                )
+            
+            print("✅ Configuración de robustez aplicada correctamente")
+            
+        except Exception as e:
+            print(f"❌ Error aplicando configuración de robustez: {e}")
+    
+    def configurar_robustez_automatica(self, imagen: np.ndarray = None):
+        """
+        Configura la robustez automáticamente basándose en las condiciones de iluminación
+        
+        Args:
+            imagen (np.ndarray, optional): Imagen para analizar. Si no se proporciona, captura una nueva.
+        """
+        try:
+            # Capturar imagen si no se proporciona
+            if imagen is None:
+                print("📸 Capturando imagen para análisis de robustez...")
+                imagen = self.camara.capturar_frame()
+                if imagen is None:
+                    print("❌ Error capturando imagen, usando configuración por defecto")
+                    self.aplicar_configuracion_robustez("moderada")
+                    return
+            
+            # Analizar iluminación
+            gray = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+            brightness = np.mean(gray)
+            contrast = np.std(gray)
+            
+            print(f"📊 Análisis de iluminación:")
+            print(f"   Brillo: {brightness:.1f}")
+            print(f"   Contraste: {contrast:.1f}")
+            
+            # Determinar configuración basándose en condiciones
+            if brightness < 60 or contrast < 20:
+                configuracion = "ultra_permisiva"
+                print("   Condiciones: Muy difíciles")
+            elif brightness < 100 or contrast < 30:
+                configuracion = "permisiva"
+                print("   Condiciones: Difíciles")
+            elif brightness < 150:
+                configuracion = "moderada"
+                print("   Condiciones: Normales")
+            else:
+                configuracion = "original"
+                print("   Condiciones: Buenas")
+            
+            # Aplicar configuración
+            self.aplicar_configuracion_robustez(configuracion)
+            
+        except Exception as e:
+            print(f"❌ Error en configuración automática de robustez: {e}")
+            # Fallback a configuración moderada
+            self.aplicar_configuracion_robustez("moderada")

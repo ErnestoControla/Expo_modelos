@@ -221,7 +221,9 @@ def mostrar_menu():
     print("  7. Solo Ver Frame")
     print("  8. Estadísticas del Sistema")
     print("  9. Configuración")
-    print("  10. Salir del Sistema")
+    print("  10. Configuración de Robustez")
+    print("  11. Configuración de Fusión de Máscaras")
+    print("  12. Salir del Sistema")
     print("="*60)
     print("  ENTER - Opción 1 (Análisis Completo)")
     print("  '2'   - Solo Clasificación")
@@ -232,6 +234,8 @@ def mostrar_menu():
     print("  'v'   - Solo Ver Frame")
     print("  's'   - Estadísticas")
     print("  'c'   - Configuración")
+    print("  'r'   - Configuración de Robustez")
+    print("  'f'   - Configuración de Fusión de Máscaras")
     print("  'q'   - Salir")
     print("="*60)
 
@@ -811,7 +815,13 @@ def main():
                 procesar_comando_estadisticas(sistema)
             
             elif entrada == 'c':
-                sistema.mostrar_configuracion()
+                procesar_comando_configuracion(sistema)
+            
+            elif entrada == 'r':
+                procesar_comando_robustez(sistema)
+            
+            elif entrada == 'f':
+                procesar_comando_fusion(sistema)
             
             elif entrada == 't':
                 procesar_comando_umbral(sistema)
@@ -883,6 +893,202 @@ def main():
         limpiar_memoria()
         
         print("✅ Sistema terminado correctamente")
+
+
+def procesar_comando_configuracion(sistema):
+    """Muestra la configuración actual del sistema."""
+    print("\n🔧 CONFIGURACIÓN ACTUAL DEL SISTEMA")
+    print("="*50)
+    
+    # Mostrar configuración de la cámara
+    print("📷 Cámara:")
+    print(f"   IP: {GlobalConfig.CAMERA_IP}")
+    print(f"   Resolución: {GlobalConfig.CAMERA_WIDTH}x{GlobalConfig.CAMERA_HEIGHT}")
+    print(f"   ROI: {GlobalConfig.CAMERA_ROI_WIDTH}x{GlobalConfig.CAMERA_ROI_HEIGHT}")
+    print(f"   Offset: ({GlobalConfig.CAMERA_ROI_OFFSET_X}, {GlobalConfig.CAMERA_ROI_OFFSET_Y})")
+    print(f"   Exposición: {GlobalConfig.CAMERA_EXPOSURE_TIME}μs")
+    print(f"   FPS: {GlobalConfig.CAMERA_FRAMERATE}")
+    print(f"   Ganancia: {GlobalConfig.CAMERA_GAIN}")
+    
+    # Mostrar configuración de modelos
+    print("\n🧠 Modelos:")
+    print(f"   Clasificación: {GlobalConfig.CLASSIFICATION_MODEL}")
+    print(f"   Detección de Piezas: {GlobalConfig.DETECTION_MODEL}")
+    print(f"   Detección de Defectos: {GlobalConfig.DETECTION_DEFECTOS_MODEL}")
+    print(f"   Segmentación de Defectos: {GlobalConfig.SEGMENTATION_DEFECTOS_MODEL}")
+    print(f"   Segmentación de Piezas: {GlobalConfig.SEGMENTATION_PARTS_MODEL}")
+    
+    # Mostrar configuración de inferencia
+    print("\n⚙️ Inferencia:")
+    print(f"   Tamaño de entrada: {GlobalConfig.INPUT_SIZE}x{GlobalConfig.INPUT_SIZE}")
+    print(f"   Umbral de confianza: {GlobalConfig.CONFIDENCE_THRESHOLD}")
+    print(f"   Máximo detecciones: {GlobalConfig.MAX_DETECTIONS}")
+    
+    # Mostrar directorios
+    print("\n📁 Directorios:")
+    print(f"   Salida: {GlobalConfig.OUTPUT_DIR}")
+    print(f"   Modelos: {GlobalConfig.MODELS_DIR}")
+    
+    input("\nPresiona ENTER para continuar...")
+
+
+def procesar_comando_robustez(sistema):
+    """Maneja la configuración de robustez."""
+    print("\n🔧 CONFIGURACIÓN DE ROBUSTEZ")
+    print("="*50)
+    
+    while True:
+        print("\nOpciones de robustez:")
+        print("  1. Configuración Original (conf=0.55, iou=0.35)")
+        print("  2. Configuración Moderada (conf=0.3, iou=0.2) - RECOMENDADA")
+        print("  3. Configuración Permisiva (conf=0.1, iou=0.1)")
+        print("  4. Configuración Ultra Permisiva (conf=0.01, iou=0.01)")
+        print("  5. Configuración Automática (basada en iluminación)")
+        print("  6. Ver configuración actual")
+        print("  7. Volver al menú principal")
+        
+        opcion = input("\nSelecciona una opción (1-7): ").strip()
+        
+        if opcion == "1":
+            print("\n🔧 Aplicando configuración original...")
+            sistema.aplicar_configuracion_robustez("original")
+            print("✅ Configuración original aplicada")
+            
+        elif opcion == "2":
+            print("\n🔧 Aplicando configuración moderada...")
+            sistema.aplicar_configuracion_robustez("moderada")
+            print("✅ Configuración moderada aplicada")
+            
+        elif opcion == "3":
+            print("\n🔧 Aplicando configuración permisiva...")
+            sistema.aplicar_configuracion_robustez("permisiva")
+            print("✅ Configuración permisiva aplicada")
+            
+        elif opcion == "4":
+            print("\n🔧 Aplicando configuración ultra permisiva...")
+            sistema.aplicar_configuracion_robustez("ultra_permisiva")
+            print("✅ Configuración ultra permisiva aplicada")
+            
+        elif opcion == "5":
+            print("\n🔧 Configurando robustez automáticamente...")
+            sistema.configurar_robustez_automatica()
+            print("✅ Configuración automática aplicada")
+            
+        elif opcion == "6":
+            print("\n📊 Configuración actual de robustez:")
+            if sistema.detector_piezas:
+                print(f"   Detector de Piezas:")
+                print(f"     Confianza mínima: {sistema.detector_piezas.confianza_min}")
+                print(f"     IoU threshold: {sistema.detector_piezas.decoder.iou_threshold}")
+            if sistema.detector_defectos:
+                print(f"   Detector de Defectos:")
+                print(f"     Confianza mínima: {sistema.detector_defectos.confianza_min}")
+                print(f"     IoU threshold: {sistema.detector_defectos.decoder.iou_threshold}")
+            
+        elif opcion == "7":
+            break
+            
+        else:
+            print("❌ Opción no válida")
+        
+        input("\nPresiona ENTER para continuar...")
+
+
+def procesar_comando_fusion(sistema):
+    """Maneja la configuración de fusión de máscaras."""
+    print("\n🔗 CONFIGURACIÓN DE FUSIÓN DE MÁSCARAS")
+    print("="*50)
+    
+    while True:
+        print("\nOpciones de fusión:")
+        print("  1. Configuración Conservadora (dist=20px, overlap=20%)")
+        print("  2. Configuración Moderada (dist=30px, overlap=10%) - RECOMENDADA")
+        print("  3. Configuración Agresiva (dist=50px, overlap=5%)")
+        print("  4. Configuración Personalizada")
+        print("  5. Ver configuración actual")
+        print("  6. Probar fusión con datos de ejemplo")
+        print("  7. Volver al menú principal")
+        
+        opcion = input("\nSelecciona una opción (1-7): ").strip()
+        
+        if opcion == "1":
+            print("\n🔧 Aplicando configuración conservadora...")
+            if hasattr(sistema, 'procesador_segmentacion_piezas') and sistema.procesador_segmentacion_piezas:
+                sistema.procesador_segmentacion_piezas.fusionador.configurar_parametros(
+                    distancia_maxima=20, overlap_minimo=0.2, area_minima_fusion=200
+                )
+                print("✅ Configuración conservadora aplicada")
+            else:
+                print("❌ Procesador de segmentación no disponible")
+            
+        elif opcion == "2":
+            print("\n🔧 Aplicando configuración moderada...")
+            if hasattr(sistema, 'procesador_segmentacion_piezas') and sistema.procesador_segmentacion_piezas:
+                sistema.procesador_segmentacion_piezas.fusionador.configurar_parametros(
+                    distancia_maxima=30, overlap_minimo=0.1, area_minima_fusion=100
+                )
+                print("✅ Configuración moderada aplicada")
+            else:
+                print("❌ Procesador de segmentación no disponible")
+            
+        elif opcion == "3":
+            print("\n🔧 Aplicando configuración agresiva...")
+            if hasattr(sistema, 'procesador_segmentacion_piezas') and sistema.procesador_segmentacion_piezas:
+                sistema.procesador_segmentacion_piezas.fusionador.configurar_parametros(
+                    distancia_maxima=50, overlap_minimo=0.05, area_minima_fusion=50
+                )
+                print("✅ Configuración agresiva aplicada")
+            else:
+                print("❌ Procesador de segmentación no disponible")
+            
+        elif opcion == "4":
+            print("\n🔧 Configuración personalizada:")
+            try:
+                dist = float(input("   Distancia máxima (píxeles): "))
+                overlap = float(input("   Overlap mínimo (0.0-1.0): "))
+                area = int(input("   Área mínima de fusión (píxeles): "))
+                
+                if hasattr(sistema, 'procesador_segmentacion_piezas') and sistema.procesador_segmentacion_piezas:
+                    sistema.procesador_segmentacion_piezas.fusionador.configurar_parametros(
+                        distancia_maxima=dist, overlap_minimo=overlap, area_minima_fusion=area
+                    )
+                    print("✅ Configuración personalizada aplicada")
+                else:
+                    print("❌ Procesador de segmentación no disponible")
+            except ValueError:
+                print("❌ Valores inválidos")
+            
+        elif opcion == "5":
+            print("\n📊 Configuración actual de fusión:")
+            if hasattr(sistema, 'procesador_segmentacion_piezas') and sistema.procesador_segmentacion_piezas:
+                stats = sistema.procesador_segmentacion_piezas.fusionador.obtener_estadisticas()
+                print(f"   Distancia máxima: {stats['distancia_maxima']}px")
+                print(f"   Overlap mínimo: {stats['overlap_minimo']:.2%}")
+                print(f"   Área mínima de fusión: {stats['area_minima_fusion']}px")
+            else:
+                print("❌ Procesador de segmentación no disponible")
+            
+        elif opcion == "6":
+            print("\n🧪 Ejecutando prueba de fusión...")
+            try:
+                import subprocess
+                result = subprocess.run(['python', 'test_fusion_simple.py'], 
+                                      capture_output=True, text=True, timeout=30)
+                if result.returncode == 0:
+                    print("✅ Prueba de fusión completada exitosamente")
+                    print("📁 Revisa las imágenes generadas: test_mascaras_*.jpg")
+                else:
+                    print(f"❌ Error en prueba: {result.stderr}")
+            except Exception as e:
+                print(f"❌ Error ejecutando prueba: {e}")
+            
+        elif opcion == "7":
+            break
+            
+        else:
+            print("❌ Opción no válida")
+        
+        input("\nPresiona ENTER para continuar...")
 
 
 if __name__ == "__main__":

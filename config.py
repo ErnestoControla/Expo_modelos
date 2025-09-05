@@ -57,15 +57,93 @@ class ModelsConfig:
     SEGMENTATION_PARTS_MODEL = "CopleSegPZ1C1V.onnx"
     SEGMENTATION_PARTS_CLASSES = "clases_CopleSegPZ1C1V.txt"
     
-    # Parámetros de inferencia
+    # Parámetros de inferencia - CONFIGURACIÓN MODERADA PARA ROBUSTEZ
     INPUT_SIZE = 640          # Resolución del modelo (640x640)
-    CONFIDENCE_THRESHOLD = 0.3
-    MAX_DETECTIONS = 10
+    CONFIDENCE_THRESHOLD = 0.3  # Configuración moderada (mejor rendimiento en condiciones difíciles)
+    IOU_THRESHOLD = 0.2       # IoU threshold moderado para eliminar duplicados
+    MAX_DETECTIONS = 30       # Aumentado para permitir más detecciones
     
     # Configuración ONNX
     INTRA_OP_THREADS = 2
     INTER_OP_THREADS = 2
     PROVIDERS = ['CPUExecutionProvider']
+
+# ==================== CONFIGURACIÓN DE ROBUSTEZ ====================
+class RobustezConfig:
+    """Configuración para robustez ante cambios de iluminación"""
+    
+    # Configuraciones de umbrales por condiciones
+    UMBRALES_ORIGINAL = {
+        'confianza_min': 0.55,
+        'iou_threshold': 0.35,
+        'descripcion': 'Configuración original - alta precisión'
+    }
+    
+    UMBRALES_MODERADA = {
+        'confianza_min': 0.3,
+        'iou_threshold': 0.2,
+        'descripcion': 'Configuración moderada - mejor rendimiento en condiciones difíciles'
+    }
+    
+    UMBRALES_PERMISIVA = {
+        'confianza_min': 0.1,
+        'iou_threshold': 0.1,
+        'descripcion': 'Configuración permisiva - para condiciones muy difíciles'
+    }
+    
+    UMBRALES_ULTRA_PERMISIVA = {
+        'confianza_min': 0.01,
+        'iou_threshold': 0.01,
+        'descripcion': 'Configuración ultra permisiva - para condiciones extremas'
+    }
+    
+    # Configuración por defecto (moderada)
+    CONFIGURACION_DEFAULT = UMBRALES_MODERADA
+    
+    # Parámetros de preprocesamiento
+    APLICAR_PREPROCESAMIENTO = False  # Por defecto desactivado para evitar colgadas
+    CLAHE_CLIP_LIMIT = 2.0
+    CLAHE_TILE_GRID_SIZE = (8, 8)
+    
+    # Límites de ajuste automático
+    CONFIANZA_MIN_LIMITE = 0.1
+    CONFIANZA_MAX_LIMITE = 0.8
+    IOU_MIN_LIMITE = 0.01
+    IOU_MAX_LIMITE = 0.5
+
+# ==================== CONFIGURACIÓN DE FUSIÓN DE MÁSCARAS ====================
+class FusionConfig:
+    """Configuración para fusión de máscaras de objetos pegados"""
+    
+    # Configuraciones por defecto
+    DISTANCIA_MAXIMA_DEFAULT = 30      # píxeles
+    OVERLAP_MINIMO_DEFAULT = 0.1       # 10%
+    AREA_MINIMA_FUSION_DEFAULT = 100   # píxeles
+    
+    # Configuraciones específicas por tipo de objeto
+    CONFIGURACIONES = {
+        'conservadora': {
+            'distancia_maxima': 20,
+            'overlap_minimo': 0.2,
+            'area_minima_fusion': 200,
+            'descripcion': 'Configuración conservadora - solo fusiona objetos muy pegados'
+        },
+        'moderada': {
+            'distancia_maxima': 30,
+            'overlap_minimo': 0.1,
+            'area_minima_fusion': 100,
+            'descripcion': 'Configuración moderada - balance entre precisión y fusión'
+        },
+        'agresiva': {
+            'distancia_maxima': 50,
+            'overlap_minimo': 0.05,
+            'area_minima_fusion': 50,
+            'descripcion': 'Configuración agresiva - fusiona objetos cercanos'
+        }
+    }
+    
+    # Configuración por defecto
+    CONFIGURACION_DEFAULT = 'moderada'
 
 # ==================== CONFIGURACIÓN DE VISUALIZACIÓN ====================
 class VisualizationConfig:

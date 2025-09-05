@@ -28,7 +28,7 @@ class DetectorDefectosCoples:
     - Estadísticas de rendimiento
     """
     
-    def __init__(self, model_path: Optional[str] = None, confianza_min: float = 0.55):
+    def __init__(self, model_path: Optional[str] = None, confianza_min: float = 0.3):
         """
         Inicializa el detector de defectos de coples.
         
@@ -257,6 +257,23 @@ class DetectorDefectosCoples:
             "input_shape": self.input_shape,
             "output_shapes": self.output_shapes
         }
+    
+    def actualizar_umbrales(self, confianza_min: float = None, iou_threshold: float = None):
+        """
+        Actualiza los umbrales del detector y del decoder
+        
+        Args:
+            confianza_min: Nuevo umbral de confianza
+            iou_threshold: Nuevo umbral de IoU
+        """
+        if confianza_min is not None:
+            self.confianza_min = confianza_min
+            self.decoder.confianza_min = confianza_min
+            print(f"✅ Umbral de confianza actualizado: {confianza_min}")
+        
+        if iou_threshold is not None:
+            self.decoder.iou_threshold = iou_threshold
+            print(f"✅ Umbral de IoU actualizado: {iou_threshold}")
     
     def liberar(self):
         """Libera recursos del detector"""

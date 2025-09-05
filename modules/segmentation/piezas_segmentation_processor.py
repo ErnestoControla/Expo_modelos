@@ -12,6 +12,7 @@ from typing import List, Dict, Tuple, Optional
 
 # Importar configuración
 from config import FileConfig, VisualizationConfig
+from modules.postprocessing.mask_fusion import FusionadorMascaras
 
 
 class ProcesadorSegmentacionPiezas:
@@ -40,6 +41,9 @@ class ProcesadorSegmentacionPiezas:
             'Cople': (0, 255, 255),  # Amarillo para piezas
             'default': (128, 128, 128)  # Gris por defecto
         }
+        
+        # Inicializar fusionador de máscaras
+        self.fusionador = FusionadorMascaras()
         
         # Contador de archivos
         self.contador_archivos = 0
@@ -81,8 +85,12 @@ class ProcesadorSegmentacionPiezas:
             # Verificar consistencia de máscaras
             self._verificar_consistencia_mascaras(segmentaciones)
             
-            # Crear visualización
-            imagen_visualizacion = self._crear_visualizacion(imagen, segmentaciones)
+            # Aplicar fusión de máscaras para objetos pegados
+            print("🔗 Aplicando fusión de máscaras para objetos pegados...")
+            segmentaciones_procesadas = self.fusionador.procesar_segmentaciones(segmentaciones)
+            
+            # Crear visualización con segmentaciones procesadas
+            imagen_visualizacion = self._crear_visualizacion(imagen, segmentaciones_procesadas)
             
             # Crear mapa de calor
             mapa_calor = self._crear_mapa_calor(imagen, segmentaciones)
@@ -95,7 +103,7 @@ class ProcesadorSegmentacionPiezas:
             
             # Guardar archivos
             cv2.imwrite(archivo_imagen, imagen_visualizacion)
-            self._guardar_json(archivo_json, segmentaciones, timestamp)
+            self._guardar_json(archivo_json, segmentaciones_procesadas, timestamp)
             cv2.imwrite(archivo_heatmap, mapa_calor)
             
             print(f"✅ Imagen guardada: {archivo_imagen}")
