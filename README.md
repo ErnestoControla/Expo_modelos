@@ -206,6 +206,6 @@ El sistema proporciona estadísticas en tiempo real:
 - **Número de frames procesados**
 - **Uso de memoria**
 
-**Desarrollado por**: [Ernesto Sánchez Céspedes/Controla]  
+**Desarrollado por**: Ernesto Sánchez Céspedes/Controla
 **Versión**: 1.0.0  
 **Última actualización**: Septiembre 2025
