@@ -9,6 +9,12 @@ from typing import List, Dict, Tuple, Optional
 import json
 from datetime import datetime
 import os
+import sys
+
+# Agregar path para imports
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+from modules.metadata_standard import MetadataStandard
 
 
 class ProcesadorBoundingBoxes:
@@ -166,58 +172,27 @@ class ProcesadorBoundingBoxes:
         return imagen_anotada
     
     def crear_metadatos_deteccion(self, detecciones: List[Dict], tiempos: Dict, 
-                                 nombre_archivo: str, modelo: str) -> Dict:
+                                 nombre_archivo: str, modelo: str, tipo_deteccion: str = "piezas") -> Dict:
         """
-        Crea metadatos JSON para las detecciones
+        Crea metadatos JSON para las detecciones usando estructura estándar
         
         Args:
             detecciones: Lista de detecciones
             tiempos: Diccionario con tiempos
             nombre_archivo: Nombre del archivo de imagen
             modelo: Nombre del modelo usado
+            tipo_deteccion: Tipo de detección (piezas o defectos)
             
         Returns:
             Diccionario con metadatos
         """
-        # Convertir valores float32 a float estándar para JSON
-        detecciones_serializables = []
-        for deteccion in detecciones:
-            deteccion_serializable = {
-                "clase": deteccion["clase"],
-                "confianza": float(deteccion["confianza"]),  # Convertir a float estándar
-                "bbox": {
-                    "x1": int(deteccion["bbox"]["x1"]),
-                    "y1": int(deteccion["bbox"]["y1"]),
-                    "x2": int(deteccion["bbox"]["x2"]),
-                    "y2": int(deteccion["bbox"]["y2"])
-                },
-                "centroide": {
-                    "x": int(deteccion["centroide"]["x"]),
-                    "y": int(deteccion["centroide"]["y"])
-                },
-                "area": int(deteccion["area"])
-            }
-            detecciones_serializables.append(deteccion_serializable)
-        
-        metadatos = {
-            "archivo_imagen": nombre_archivo,
-            "tipo_analisis": "deteccion_piezas",
-            "timestamp": datetime.now().isoformat(),
-            "modelo": modelo,
-            "resolucion": {
-                "ancho": 640,
-                "alto": 640,
-                "canales": 3
-            },
-            "piezas_detectadas": detecciones_serializables,
-            "tiempos": tiempos,
-            "estadisticas": {
-                "total_piezas": len(detecciones),
-                "confianza_promedio": float(np.mean([d["confianza"] for d in detecciones])) if detecciones else 0,
-                "confianza_maxima": float(max([d["confianza"] for d in detecciones])) if detecciones else 0,
-                "confianza_minima": float(min([d["confianza"] for d in detecciones])) if detecciones else 0
-            }
-        }
+        # Usar estructura estándar de metadatos
+        metadatos = MetadataStandard.crear_metadatos_completos(
+            tipo_analisis=f"deteccion_{tipo_deteccion}",
+            archivo_imagen=nombre_archivo,
+            resultados=detecciones,
+            tiempos=tiempos
+        )
         
         return metadatos
     

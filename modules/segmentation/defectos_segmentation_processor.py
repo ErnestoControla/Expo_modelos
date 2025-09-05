@@ -9,6 +9,12 @@ from typing import List, Dict, Tuple, Optional
 import json
 from datetime import datetime
 import os
+import sys
+
+# Agregar path para imports
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+from modules.metadata_standard import MetadataStandard
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
@@ -220,7 +226,7 @@ class ProcesadorSegmentacionDefectos:
     def crear_metadatos_segmentacion(self, segmentaciones: List[Dict], tiempos: Dict, 
                                    nombre_archivo: str, modelo: str) -> Dict:
         """
-        Crea metadatos para la segmentación (optimizado para estabilidad)
+        Crea metadatos para la segmentación usando estructura estándar
         
         Args:
             segmentaciones: Lista de segmentaciones detectadas
@@ -231,63 +237,13 @@ class ProcesadorSegmentacionDefectos:
         Returns:
             Diccionario con metadatos de segmentación
         """
-        segmentaciones_serializables = []
-        
-        for segmentacion in segmentaciones:
-            try:
-                # Convertir solo datos esenciales para evitar problemas de memoria
-                segmentacion_serializable = {
-                    "clase": str(segmentacion["clase"]),
-                    "confianza": float(segmentacion["confianza"]),
-                    "bbox": {
-                        "x1": int(segmentacion["bbox"]["x1"]),
-                        "y1": int(segmentacion["bbox"]["y1"]),
-                        "x2": int(segmentacion["bbox"]["x2"]),
-                        "y2": int(segmentacion["bbox"]["y2"])
-                    },
-                    "centroide": {
-                        "x": int(segmentacion["centroide"]["x"]),
-                        "y": int(segmentacion["centroide"]["y"])
-                    },
-                    "area": int(segmentacion["area"]),
-                    "area_mascara": int(segmentacion.get("area_mascara", 0))
-                }
-                
-                # Agregar coeficientes de máscara (solo primeros 5 para estabilidad)
-                if "coeficientes_mascara" in segmentacion:
-                    coeffs = segmentacion["coeficientes_mascara"]
-                    if isinstance(coeffs, list) and len(coeffs) > 0:
-                        segmentacion_serializable["coeficientes_mascara"] = coeffs[:5]  # Solo primeros 5
-                    else:
-                        segmentacion_serializable["coeficientes_mascara"] = []
-                
-                segmentaciones_serializables.append(segmentacion_serializable)
-                
-            except Exception as e:
-                print(f"⚠️ Error serializando segmentación: {e}")
-                # Continuar con la siguiente segmentación
-                continue
-        
-        metadatos = {
-            "archivo_imagen": nombre_archivo,
-            "tipo_analisis": "segmentacion_defectos",
-            "timestamp": datetime.now().isoformat(),
-            "modelo": modelo,
-            "resolucion": {
-                "ancho": 640,
-                "alto": 640,
-                "canales": 3
-            },
-            "segmentaciones_detectadas": segmentaciones_serializables,
-            "tiempos": tiempos,
-            "estadisticas": {
-                "total_segmentaciones": len(segmentaciones),
-                "confianza_promedio": float(np.mean([s["confianza"] for s in segmentaciones])) if segmentaciones else 0,
-                "confianza_maxima": float(max([s["confianza"] for s in segmentaciones])) if segmentaciones else 0,
-                "confianza_minima": float(min([s["confianza"] for s in segmentaciones])) if segmentaciones else 0,
-                "area_total": int(sum([s["area"] for s in segmentaciones])) if segmentaciones else 0
-            }
-        }
+        # Usar estructura estándar de metadatos
+        metadatos = MetadataStandard.crear_metadatos_completos(
+            tipo_analisis="segmentacion_defectos",
+            archivo_imagen=nombre_archivo,
+            resultados=segmentaciones,
+            tiempos=tiempos
+        )
         
         return metadatos
     

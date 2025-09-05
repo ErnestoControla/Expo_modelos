@@ -1,0 +1,25 @@
+{
+  "archivo_imagen": "clasificacion_20250905_171858_1.jpg",
+  "tipo_analisis": "clasificacion_defectos",
+  "timestamp_captura": "20250905_171858",
+  "clasificacion": {
+    "clase": "Rechazado",
+    "confianza": 0.9918163418769836,
+    "tiempo_inferencia": 41.11194610595703
+  },
+  "tiempos": {
+    "captura_ms": 0.19240379333496094,
+    "clasificacion_ms": 41.15772247314453,
+    "deteccion_piezas_ms": 74.04255867004395,
+    "deteccion_defectos_ms": 96.03714942932129,
+    "segmentacion_defectos_ms": 117.98214912414551,
+    "segmentacion_piezas_ms": 205.9316635131836,
+    "total_ms": 717.8153991699219
+  },
+  "modelo": "CopleClasDef2C1V.onnx",
+  "resolucion": {
+    "ancho": 640,
+    "alto": 640,
+    "canales": 3
+  }
+}

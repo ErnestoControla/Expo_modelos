@@ -7,12 +7,17 @@ import cv2
 import numpy as np
 import json
 import os
+import sys
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
+
+# Agregar path para imports
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # Importar configuración
 from config import FileConfig, VisualizationConfig
 from modules.postprocessing.mask_fusion import FusionadorMascaras
+from modules.metadata_standard import MetadataStandard
 
 
 class ProcesadorSegmentacionPiezas:
@@ -318,7 +323,7 @@ class ProcesadorSegmentacionPiezas:
     
     def _guardar_json(self, archivo_json: str, segmentaciones: List[Dict], timestamp: str):
         """
-        Guarda las segmentaciones en formato JSON con metadatos.
+        Guarda las segmentaciones en formato JSON con metadatos usando estructura estándar.
         
         Args:
             archivo_json (str): Ruta del archivo JSON
@@ -326,52 +331,17 @@ class ProcesadorSegmentacionPiezas:
             timestamp (str): Timestamp de la captura
         """
         try:
-            # Preparar datos para JSON
-            datos_json = {
-                'timestamp': timestamp,
-                'tipo_analisis': 'segmentacion_piezas',
-                'total_segmentaciones': len(segmentaciones),
-                'segmentaciones': []
-            }
+            # Crear metadatos usando estructura estándar
+            metadatos = MetadataStandard.crear_metadatos_completos(
+                tipo_analisis="segmentacion_piezas",
+                archivo_imagen=os.path.basename(archivo_json).replace('.json', '.jpg'),
+                resultados=segmentaciones,
+                tiempos={},  # Los tiempos se manejan en el método principal
+                timestamp_captura=timestamp
+            )
             
-            for i, seg in enumerate(segmentaciones):
-                try:
-                    # Crear entrada de segmentación
-                    entrada = {
-                        'id': i + 1,
-                        'clase': seg.get('clase', 'Cople'),
-                        'confianza': float(seg.get('confianza', 0.0)),
-                        'bbox': seg.get('bbox', {}),
-                        'centroide': seg.get('centroide', {}),
-                        'area_bbox': int(seg.get('area', 0)),
-                        'area_mascara': int(seg.get('area_mascara', 0)),
-                        'dimensiones_mascara': {
-                            'ancho': int(seg.get('ancho_mascara', 0)),
-                            'alto': int(seg.get('alto_mascara', 0))
-                        },
-                        'tiene_mascara': seg.get('mascara') is not None
-                    }
-                    
-                    # Agregar información adicional si está disponible
-                    if 'mascara' in seg and seg['mascara'] is not None:
-                        mascara = seg['mascara']
-                        if isinstance(mascara, np.ndarray):
-                            entrada['info_mascara'] = {
-                                'shape': list(mascara.shape),
-                                'tipo': str(mascara.dtype),
-                                'rango': [float(np.min(mascara)), float(np.max(mascara))],
-                                'pixels_activos': int(np.sum(mascara > 0.5))
-                            }
-                    
-                    datos_json['segmentaciones'].append(entrada)
-                    
-                except Exception as e:
-                    print(f"⚠️ Error procesando segmentación {i} para JSON: {e}")
-                    continue
-            
-            # Guardar archivo JSON
-            with open(archivo_json, 'w', encoding='utf-8') as f:
-                json.dump(datos_json, f, indent=2, ensure_ascii=False)
+            # Guardar archivo JSON usando el método estándar
+            MetadataStandard.guardar_metadatos(metadatos, archivo_json)
             
         except Exception as e:
             print(f"❌ Error guardando JSON: {e}")

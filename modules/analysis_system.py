@@ -18,6 +18,7 @@ from modules.capture import CamaraTiempoOptimizada
 from modules.classification import ClasificadorCoplesONNX, ProcesadorImagenClasificacion
 from modules.detection import DetectorPiezasCoples, ProcesadorPiezasCoples, DetectorDefectosCoples, ProcesadorDefectos
 from modules.segmentation import SegmentadorDefectosCoples, ProcesadorSegmentacionDefectos
+from modules.metadata_standard import MetadataStandard
 from modules.segmentation.segmentation_piezas_engine import SegmentadorPiezasCoples
 from modules.segmentation.piezas_segmentation_processor import ProcesadorSegmentacionPiezas
 from modules.preprocessing.illumination_robust import RobustezIluminacion
@@ -742,20 +743,14 @@ class SistemaAnalisisIntegrado:
             ruta_imagen = os.path.join(self.directorios_salida["clasificacion"], nombre_imagen)
             cv2.imwrite(ruta_imagen, frame_anotado)
             
-            # Crear y guardar JSON de clasificación
-            metadatos_clasificacion = {
-                "archivo_imagen": nombre_imagen,
-                "tipo_analisis": "clasificacion_defectos",
-                "timestamp_captura": timestamp_captura,
-                "clasificacion": resultados["clasificacion"],
-                "tiempos": resultados["tiempos"],
-                "modelo": "CopleClasDef2C1V.onnx",
-                "resolucion": {
-                    "ancho": 640,
-                    "alto": 640,
-                    "canales": 3
-                }
-            }
+            # Crear metadatos usando estructura estándar
+            metadatos_clasificacion = MetadataStandard.crear_metadatos_completos(
+                tipo_analisis="clasificacion",
+                archivo_imagen=nombre_imagen,
+                resultados=resultados["clasificacion"],
+                tiempos=resultados["tiempos"],
+                timestamp_captura=timestamp_captura
+            )
             
             nombre_json = f"clasificacion_{timestamp_captura}_{self.contador_resultados}.json"
             ruta_json = os.path.join(self.directorios_salida["clasificacion"], nombre_json)

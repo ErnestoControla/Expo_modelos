@@ -9,6 +9,12 @@ from typing import List, Dict, Tuple, Optional
 import json
 from datetime import datetime
 import os
+import sys
+
+# Agregar path para imports
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+from modules.metadata_standard import MetadataStandard
 
 
 class ProcesadorDefectos:
@@ -160,7 +166,7 @@ class ProcesadorDefectos:
     def crear_metadatos_defectos(self, defectos: List[Dict], tiempos: Dict, 
                                  nombre_archivo: str, modelo: str) -> Dict:
         """
-        Crea metadatos JSON para las detecciones de defectos
+        Crea metadatos JSON para las detecciones de defectos usando estructura estándar
         
         Args:
             defectos: Lista de detecciones de defectos
@@ -171,45 +177,13 @@ class ProcesadorDefectos:
         Returns:
             Diccionario con metadatos
         """
-        # Convertir valores float32 a float estándar para JSON
-        defectos_serializables = []
-        for defecto in defectos:
-            defecto_serializable = {
-                "clase": defecto["clase"],
-                "confianza": float(defecto["confianza"]),  # Convertir a float estándar
-                "bbox": {
-                    "x1": int(defecto["bbox"]["x1"]),
-                    "y1": int(defecto["bbox"]["y1"]),
-                    "x2": int(defecto["bbox"]["x2"]),
-                    "y2": int(defecto["bbox"]["y2"])
-                },
-                "centroide": {
-                    "x": int(defecto["centroide"]["x"]),
-                    "y": int(defecto["centroide"]["y"])
-                },
-                "area": int(defecto["area"])
-            }
-            defectos_serializables.append(defecto_serializable)
-        
-        metadatos = {
-            "archivo_imagen": nombre_archivo,
-            "tipo_analisis": "deteccion_defectos",
-            "timestamp": datetime.now().isoformat(),
-            "modelo": modelo,
-            "resolucion": {
-                "ancho": 640,
-                "alto": 640,
-                "canales": 3
-            },
-            "defectos_detectados": defectos_serializables,
-            "tiempos": tiempos,
-            "estadisticas": {
-                "total_defectos": len(defectos),
-                "confianza_promedio": float(np.mean([d["confianza"] for d in defectos])) if defectos else 0,
-                "confianza_maxima": float(max([d["confianza"] for d in defectos])) if defectos else 0,
-                "confianza_minima": float(min([d["confianza"] for d in defectos])) if defectos else 0
-            }
-        }
+        # Usar estructura estándar de metadatos
+        metadatos = MetadataStandard.crear_metadatos_completos(
+            tipo_analisis="deteccion_defectos",
+            archivo_imagen=nombre_archivo,
+            resultados=defectos,
+            tiempos=tiempos
+        )
         
         return metadatos
     
