@@ -9,7 +9,7 @@ import os
 import numpy as np
 
 # Importar módulos propios
-from config import GlobalConfig, FileConfig
+from config import GlobalConfig, FileConfig, CameraConfig, ModelsConfig
 from utils import (
     verificar_dependencias, 
     mostrar_info_sistema,
@@ -118,7 +118,11 @@ class SistemaAnalisisCoples:
         if not self.inicializado:
             return None, 0, 0
         
-        return self.camara.obtener_frame_instantaneo()
+        # Usar el sistema integrado para obtener el frame
+        if hasattr(self, 'sistema_integrado') and self.sistema_integrado.inicializado:
+            return self.sistema_integrado.camara.obtener_frame_instantaneo()
+        else:
+            return None, 0, 0
     
     def guardar_resultado_clasificacion(
         self, 
@@ -210,33 +214,24 @@ class SistemaAnalisisCoples:
 def mostrar_menu():
     """Muestra el menú de opciones disponibles."""
     print("\n" + "="*60)
-    print("🎯 ANÁLISIS DISPONIBLE:")
+    print("🎯 SISTEMA DE ANÁLISIS DE COPLES")
     print("="*60)
-    print("  1. Análisis Completo (Clasificación + Detección de Piezas + Defectos + Segmentación de Defectos + Segmentación de Piezas)")
-    print("  2. Solo Clasificación")
-    print("  3. Solo Detección de Piezas")
-    print("  4. Solo Detección de Defectos")
-    print("  5. Solo Segmentación de Defectos")
-    print("  6. Solo Segmentación de Piezas")
-    print("  7. Solo Ver Frame")
-    print("  8. Estadísticas del Sistema")
-    print("  9. Configuración")
-    print("  10. Configuración de Robustez")
-    print("  11. Configuración de Fusión de Máscaras")
-    print("  12. Salir del Sistema")
-    print("="*60)
-    print("  ENTER - Opción 1 (Análisis Completo)")
+    print("📋 OPCIONES PRINCIPALES:")
+    print("  ENTER - Análisis Completo (Recomendado)")
+    print("  '1'   - Análisis Completo")
     print("  '2'   - Solo Clasificación")
     print("  '3'   - Solo Detección de Piezas")
     print("  '4'   - Solo Detección de Defectos")
     print("  '5'   - Solo Segmentación de Defectos")
     print("  '6'   - Solo Segmentación de Piezas")
-    print("  'v'   - Solo Ver Frame")
-    print("  's'   - Estadísticas")
+    print("")
+    print("🔧 OPCIONES AVANZADAS:")
+    print("  'v'   - Ver Frame Actual")
+    print("  's'   - Estadísticas del Sistema")
     print("  'c'   - Configuración")
     print("  'r'   - Configuración de Robustez")
     print("  'f'   - Configuración de Fusión de Máscaras")
-    print("  'q'   - Salir")
+    print("  'q'   - Salir del Sistema")
     print("="*60)
 
 
@@ -710,13 +705,23 @@ def procesar_comando_ver(sistema, ventana_cv):
     
     if frame is not None:
         print(f"📷 Frame obtenido en {tiempo_acceso:.2f} ms")
+        print(f"📐 Dimensiones: {frame.shape[1]}x{frame.shape[0]}")
+        print(f"🎨 Tipo: {frame.dtype}")
+        print(f"⏰ Timestamp: {timestamp}")
         
         # Mostrar frame
         cv2.imshow(ventana_cv, frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        print("🖼️  Frame mostrado. Presiona cualquier tecla para continuar...")
+        
+        # Esperar a que el usuario presione una tecla
+        key = cv2.waitKey(0) & 0xFF
+        if key == ord('q'):
+            return False
+        elif key == 27:  # ESC
             return False
     else:
         print("⚠️ No hay frames disponibles")
+        print("💡 Verifica que la cámara esté conectada y funcionando")
     
     return True
 
@@ -823,9 +828,6 @@ def main():
             elif entrada == 'f':
                 procesar_comando_fusion(sistema)
             
-            elif entrada == 't':
-                procesar_comando_umbral(sistema)
-            
             elif entrada == 'v':
                 if not procesar_comando_ver(sistema, ventana_cv):
                     break
@@ -864,7 +866,9 @@ def main():
                 mostrar_menu()
             
             else:
-                print("❓ Comando no reconocido. Escribe 'help' para ver opciones.")
+                print("❌ Comando no reconocido.")
+                print("💡 Usa ENTER para análisis completo o 'q' para salir.")
+                print("💡 Presiona 'h' para ver el menú de ayuda.")
     
     except KeyboardInterrupt:
         print("\n⚠️ Interrumpido por usuario")
@@ -902,32 +906,32 @@ def procesar_comando_configuracion(sistema):
     
     # Mostrar configuración de la cámara
     print("📷 Cámara:")
-    print(f"   IP: {GlobalConfig.CAMERA_IP}")
-    print(f"   Resolución: {GlobalConfig.CAMERA_WIDTH}x{GlobalConfig.CAMERA_HEIGHT}")
-    print(f"   ROI: {GlobalConfig.CAMERA_ROI_WIDTH}x{GlobalConfig.CAMERA_ROI_HEIGHT}")
-    print(f"   Offset: ({GlobalConfig.CAMERA_ROI_OFFSET_X}, {GlobalConfig.CAMERA_ROI_OFFSET_Y})")
-    print(f"   Exposición: {GlobalConfig.CAMERA_EXPOSURE_TIME}μs")
-    print(f"   FPS: {GlobalConfig.CAMERA_FRAMERATE}")
-    print(f"   Ganancia: {GlobalConfig.CAMERA_GAIN}")
+    print(f"   IP: {CameraConfig.DEFAULT_IP}")
+    print(f"   Resolución: {CameraConfig.ROI_WIDTH}x{CameraConfig.ROI_HEIGHT}")
+    print(f"   ROI: {CameraConfig.ROI_WIDTH}x{CameraConfig.ROI_HEIGHT}")
+    print(f"   Offset: ({CameraConfig.ROI_OFFSET_X}, {CameraConfig.ROI_OFFSET_Y})")
+    print(f"   Exposición: {CameraConfig.EXPOSURE_TIME}μs")
+    print(f"   FPS: {CameraConfig.FRAMERATE}")
+    print(f"   Ganancia: {CameraConfig.GAIN}")
     
     # Mostrar configuración de modelos
     print("\n🧠 Modelos:")
-    print(f"   Clasificación: {GlobalConfig.CLASSIFICATION_MODEL}")
-    print(f"   Detección de Piezas: {GlobalConfig.DETECTION_MODEL}")
-    print(f"   Detección de Defectos: {GlobalConfig.DETECTION_DEFECTOS_MODEL}")
-    print(f"   Segmentación de Defectos: {GlobalConfig.SEGMENTATION_DEFECTOS_MODEL}")
-    print(f"   Segmentación de Piezas: {GlobalConfig.SEGMENTATION_PARTS_MODEL}")
+    print(f"   Clasificación: {ModelsConfig.CLASSIFICATION_MODEL}")
+    print(f"   Detección de Piezas: {ModelsConfig.DETECTION_PARTS_MODEL}")
+    print(f"   Detección de Defectos: {ModelsConfig.DETECTION_DEFECTOS_MODEL}")
+    print(f"   Segmentación de Defectos: {ModelsConfig.SEGMENTATION_DEFECTOS_MODEL}")
+    print(f"   Segmentación de Piezas: {ModelsConfig.SEGMENTATION_PARTS_MODEL}")
     
     # Mostrar configuración de inferencia
     print("\n⚙️ Inferencia:")
-    print(f"   Tamaño de entrada: {GlobalConfig.INPUT_SIZE}x{GlobalConfig.INPUT_SIZE}")
-    print(f"   Umbral de confianza: {GlobalConfig.CONFIDENCE_THRESHOLD}")
-    print(f"   Máximo detecciones: {GlobalConfig.MAX_DETECTIONS}")
+    print(f"   Tamaño de entrada: {ModelsConfig.INPUT_SIZE}x{ModelsConfig.INPUT_SIZE}")
+    print(f"   Umbral de confianza: {ModelsConfig.CONFIDENCE_THRESHOLD}")
+    print(f"   Máximo detecciones: {ModelsConfig.MAX_DETECTIONS}")
     
     # Mostrar directorios
     print("\n📁 Directorios:")
-    print(f"   Salida: {GlobalConfig.OUTPUT_DIR}")
-    print(f"   Modelos: {GlobalConfig.MODELS_DIR}")
+    print(f"   Salida: {FileConfig.OUTPUT_DIR}")
+    print(f"   Modelos: {ModelsConfig.MODELS_DIR}")
     
     input("\nPresiona ENTER para continuar...")
 
@@ -951,39 +955,39 @@ def procesar_comando_robustez(sistema):
         
         if opcion == "1":
             print("\n🔧 Aplicando configuración original...")
-            sistema.aplicar_configuracion_robustez("original")
+            sistema.sistema_integrado.aplicar_configuracion_robustez("original")
             print("✅ Configuración original aplicada")
             
         elif opcion == "2":
             print("\n🔧 Aplicando configuración moderada...")
-            sistema.aplicar_configuracion_robustez("moderada")
+            sistema.sistema_integrado.aplicar_configuracion_robustez("moderada")
             print("✅ Configuración moderada aplicada")
             
         elif opcion == "3":
             print("\n🔧 Aplicando configuración permisiva...")
-            sistema.aplicar_configuracion_robustez("permisiva")
+            sistema.sistema_integrado.aplicar_configuracion_robustez("permisiva")
             print("✅ Configuración permisiva aplicada")
             
         elif opcion == "4":
             print("\n🔧 Aplicando configuración ultra permisiva...")
-            sistema.aplicar_configuracion_robustez("ultra_permisiva")
+            sistema.sistema_integrado.aplicar_configuracion_robustez("ultra_permisiva")
             print("✅ Configuración ultra permisiva aplicada")
             
         elif opcion == "5":
             print("\n🔧 Configurando robustez automáticamente...")
-            sistema.configurar_robustez_automatica()
+            sistema.sistema_integrado.configurar_robustez_automatica()
             print("✅ Configuración automática aplicada")
             
         elif opcion == "6":
             print("\n📊 Configuración actual de robustez:")
-            if sistema.detector_piezas:
+            if sistema.sistema_integrado.detector_piezas:
                 print(f"   Detector de Piezas:")
-                print(f"     Confianza mínima: {sistema.detector_piezas.confianza_min}")
-                print(f"     IoU threshold: {sistema.detector_piezas.decoder.iou_threshold}")
-            if sistema.detector_defectos:
+                print(f"     Confianza mínima: {sistema.sistema_integrado.detector_piezas.confianza_min}")
+                print(f"     IoU threshold: {sistema.sistema_integrado.detector_piezas.decoder.iou_threshold}")
+            if sistema.sistema_integrado.detector_defectos:
                 print(f"   Detector de Defectos:")
-                print(f"     Confianza mínima: {sistema.detector_defectos.confianza_min}")
-                print(f"     IoU threshold: {sistema.detector_defectos.decoder.iou_threshold}")
+                print(f"     Confianza mínima: {sistema.sistema_integrado.detector_defectos.confianza_min}")
+                print(f"     IoU threshold: {sistema.sistema_integrado.detector_defectos.decoder.iou_threshold}")
             
         elif opcion == "7":
             break

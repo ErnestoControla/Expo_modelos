@@ -1,0 +1,317 @@
+{
+  "archivo_imagen": "cople_deteccion_defectos_20250905_175750.jpg",
+  "timestamp_procesamiento": "2025-09-05T17:57:50.931174",
+  "timestamp_captura": "2025-09-05T17:57:50.931174",
+  "tipo_analisis": "deteccion_defectos",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleDetDef1C2V.onnx",
+    "tipo": "deteccion_defectos",
+    "clases_disponibles": [
+      "Defecto"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "defectos_detectadas": [
+      {
+        "id": 1,
+        "clase": "Defecto",
+        "confianza": 0.6902645230293274,
+        "bbox": {
+          "x1": 316,
+          "y1": 332,
+          "x2": 384,
+          "y2": 380
+        },
+        "centroide": {
+          "x": 350,
+          "y": 356
+        },
+        "area": 3231
+      },
+      {
+        "id": 2,
+        "clase": "Defecto",
+        "confianza": 0.6880627870559692,
+        "bbox": {
+          "x1": 236,
+          "y1": 155,
+          "x2": 287,
+          "y2": 187
+        },
+        "centroide": {
+          "x": 261,
+          "y": 171
+        },
+        "area": 1610
+      },
+      {
+        "id": 3,
+        "clase": "Defecto",
+        "confianza": 0.6591775417327881,
+        "bbox": {
+          "x1": 558,
+          "y1": 131,
+          "x2": 590,
+          "y2": 156
+        },
+        "centroide": {
+          "x": 574,
+          "y": 144
+        },
+        "area": 806
+      },
+      {
+        "id": 4,
+        "clase": "Defecto",
+        "confianza": 0.5602207183837891,
+        "bbox": {
+          "x1": 546,
+          "y1": 242,
+          "x2": 593,
+          "y2": 278
+        },
+        "centroide": {
+          "x": 569,
+          "y": 260
+        },
+        "area": 1714
+      },
+      {
+        "id": 5,
+        "clase": "Defecto",
+        "confianza": 0.5006417036056519,
+        "bbox": {
+          "x1": 177,
+          "y1": 239,
+          "x2": 210,
+          "y2": 265
+        },
+        "centroide": {
+          "x": 193,
+          "y": 252
+        },
+        "area": 865
+      },
+      {
+        "id": 6,
+        "clase": "Defecto",
+        "confianza": 0.5004404187202454,
+        "bbox": {
+          "x1": 0,
+          "y1": 603,
+          "x2": 7,
+          "y2": 639
+        },
+        "centroide": {
+          "x": 3,
+          "y": 621
+        },
+        "area": 273
+      },
+      {
+        "id": 7,
+        "clase": "Defecto",
+        "confianza": 0.5003328323364258,
+        "bbox": {
+          "x1": 629,
+          "y1": 64,
+          "x2": 639,
+          "y2": 107
+        },
+        "centroide": {
+          "x": 634,
+          "y": 86
+        },
+        "area": 453
+      },
+      {
+        "id": 8,
+        "clase": "Defecto",
+        "confianza": 0.5003147721290588,
+        "bbox": {
+          "x1": 0,
+          "y1": 97,
+          "x2": 12,
+          "y2": 140
+        },
+        "centroide": {
+          "x": 6,
+          "y": 118
+        },
+        "area": 518
+      },
+      {
+        "id": 9,
+        "clase": "Defecto",
+        "confianza": 0.5001684427261353,
+        "bbox": {
+          "x1": 629,
+          "y1": 14,
+          "x2": 639,
+          "y2": 68
+        },
+        "centroide": {
+          "x": 634,
+          "y": 41
+        },
+        "area": 585
+      },
+      {
+        "id": 10,
+        "clase": "Defecto",
+        "confianza": 0.500028133392334,
+        "bbox": {
+          "x1": 163,
+          "y1": 26,
+          "x2": 285,
+          "y2": 85
+        },
+        "centroide": {
+          "x": 224,
+          "y": 56
+        },
+        "area": 7227
+      },
+      {
+        "id": 11,
+        "clase": "Defecto",
+        "confianza": 0.5000243186950684,
+        "bbox": {
+          "x1": 102,
+          "y1": 407,
+          "x2": 165,
+          "y2": 459
+        },
+        "centroide": {
+          "x": 134,
+          "y": 433
+        },
+        "area": 3317
+      },
+      {
+        "id": 12,
+        "clase": "Defecto",
+        "confianza": 0.500018298625946,
+        "bbox": {
+          "x1": 85,
+          "y1": 224,
+          "x2": 155,
+          "y2": 262
+        },
+        "centroide": {
+          "x": 120,
+          "y": 243
+        },
+        "area": 2685
+      },
+      {
+        "id": 13,
+        "clase": "Defecto",
+        "confianza": 0.5000088810920715,
+        "bbox": {
+          "x1": 174,
+          "y1": 107,
+          "x2": 187,
+          "y2": 144
+        },
+        "centroide": {
+          "x": 180,
+          "y": 126
+        },
+        "area": 479
+      },
+      {
+        "id": 14,
+        "clase": "Defecto",
+        "confianza": 0.5000056624412537,
+        "bbox": {
+          "x1": 12,
+          "y1": 236,
+          "x2": 93,
+          "y2": 283
+        },
+        "centroide": {
+          "x": 53,
+          "y": 260
+        },
+        "area": 3781
+      },
+      {
+        "id": 15,
+        "clase": "Defecto",
+        "confianza": 0.5000051259994507,
+        "bbox": {
+          "x1": 5,
+          "y1": 3,
+          "x2": 71,
+          "y2": 39
+        },
+        "centroide": {
+          "x": 38,
+          "y": 21
+        },
+        "area": 2413
+      },
+      {
+        "id": 16,
+        "clase": "Defecto",
+        "confianza": 0.5000048875808716,
+        "bbox": {
+          "x1": 1,
+          "y1": 32,
+          "x2": 54,
+          "y2": 69
+        },
+        "centroide": {
+          "x": 27,
+          "y": 51
+        },
+        "area": 1939
+      },
+      {
+        "id": 17,
+        "clase": "Defecto",
+        "confianza": 0.5000041127204895,
+        "bbox": {
+          "x1": 35,
+          "y1": 68,
+          "x2": 96,
+          "y2": 101
+        },
+        "centroide": {
+          "x": 65,
+          "y": 84
+        },
+        "area": 1997
+      }
+    ]
+  },
+  "tiempos": {
+    "captura_ms": 0.1609325408935547,
+    "deteccion_defectos_ms": 84.93828773498535,
+    "total_ms": 736.3781929016113
+  },
+  "estadisticas": {
+    "total_defectos": 17,
+    "confianza_promedio": 0.535277832956875,
+    "confianza_maxima": 0.6902645230293274,
+    "confianza_minima": 0.5000041127204895,
+    "area_total": 33893,
+    "area_promedio": 1993.7058823529412
+  }
+}
