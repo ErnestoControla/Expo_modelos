@@ -60,15 +60,6 @@ class SegmentadorPiezasCoples:
         self.tiempo_inferencia = 0.0
         self.frames_procesados = 0
         
-        # Estadísticas del sistema (compatibilidad con sistema integrado)
-        self.stats = {
-            'inicializado': False,
-            'inferencias_totales': 0,
-            'tiempo_total': 0.0,
-            'tiempo_promedio': 0.0,
-            'ultima_inferencia': 0.0
-        }
-        
         # Configuración
         self.confianza_min = confianza_min
         self.input_size = ModelsConfig.INPUT_SIZE  # 640x640
@@ -128,9 +119,6 @@ class SegmentadorPiezasCoples:
             print(f"   🎯 Clases: {self.num_classes}")
             print(f"   🔧 Proveedores: {providers}")
             
-            # Marcar como inicializado en las estadísticas
-            self.stats['inicializado'] = True
-            
             return True
             
         except Exception as e:
@@ -167,30 +155,11 @@ class SegmentadorPiezasCoples:
             self.tiempo_inferencia = (time.time() - inicio) * 1000
             self.frames_procesados += 1
             
-            # Actualizar estadísticas del sistema
-            self.stats['inferencias_totales'] += 1
-            self.stats['tiempo_total'] += self.tiempo_inferencia
-            self.stats['tiempo_promedio'] = self.stats['tiempo_total'] / self.stats['inferencias_totales']
-            self.stats['ultima_inferencia'] = self.tiempo_inferencia
-            
             return segmentaciones
             
         except Exception as e:
             print(f"❌ Error procesando imagen: {e}")
             return []
-    
-    def segmentar(self, imagen: np.ndarray) -> List[Dict]:
-        """
-        Método de compatibilidad con el sistema integrado.
-        Alias para procesar_imagen.
-        
-        Args:
-            imagen (np.ndarray): Imagen de entrada (BGR)
-            
-        Returns:
-            List[Dict]: Lista de segmentaciones detectadas
-        """
-        return self.procesar_imagen(imagen)
     
     def _preprocesar_imagen(self, imagen: np.ndarray) -> np.ndarray:
         """Preprocesa la imagen para el modelo ONNX."""
@@ -385,59 +354,54 @@ class SegmentadorPiezasCoples:
     
     def _generate_mask(self, mask_coeffs, mask_protos, bbox, input_shape):
         """
-        Genera máscara a partir de coeficientes y prototipos de YOLO11
+        Genera máscara combinando coeficientes con prototipos
         BASADO EN EL MÉTODO DE DEFECTOS QUE FUNCIONA BIEN
         """
         try:
-            # Extraer prototipos (shape: [1, 32, 160, 160])
-            protos = mask_protos[0]  # Shape: [32, 160, 160]
+            x1, y1, x2, y2 = bbox
+            h_img, w_img = input_shape
             
-            # Aplicar coeficientes a prototipos
-            # mask_coeffs shape: [32], protos shape: [32, 160, 160]
-            mask = np.tensordot(mask_coeffs, protos, axes=([0], [0]))  # Shape: [160, 160]
+            # Asegurar que las coordenadas estén dentro de la imagen
+            x1 = max(0, min(x1, w_img))
+            y1 = max(0, min(y1, h_img))
+            x2 = max(0, min(x2, w_img))
+            y2 = max(0, min(y2, h_img))
             
-            # Aplicar sigmoid para normalizar
-            mask = self._sigmoid(mask)
+            if x2 <= x1 or y2 <= y1:
+                return None
             
-            # Redimensionar a input_shape
-            H, W = input_shape
-            if mask.shape != (H, W):
-                mask = cv2.resize(mask, (W, H))
+            # Extraer prototipos de máscara
+            mask_protos = mask_protos[0]  # Remover batch dimension
             
-            # Recortar a la región del bounding box para mejorar precisión
-            x1, y1, x2, y2 = map(int, bbox)
-            mask_cropped = np.zeros_like(mask)
+            # Calcular máscara combinada
+            mask = np.zeros((h_img, w_img), dtype=np.float32)
             
-            # Aplicar máscara solo en la región del bbox
-            if x1 < W and y1 < H and x2 > 0 and y2 > 0:
-                # Asegurar que las coordenadas estén dentro de los límites
-                x1 = max(0, x1)
-                y1 = max(0, y1)
-                x2 = min(W, x2)
-                y2 = min(H, y2)
+            for i, coeff in enumerate(mask_coeffs):
+                if i < mask_protos.shape[0]:
+                    mask += coeff * mask_protos[i]
+            
+            # Aplicar sigmoid
+            mask = 1 / (1 + np.exp(-mask))
+            
+            # Recortar a la región del bbox
+            mask_cropped = mask[y1:y2, x1:x2]
+            
+            # Redimensionar a las dimensiones del bbox
+            bbox_h, bbox_w = y2 - y1, x2 - x1
+            if bbox_h > 0 and bbox_w > 0:
+                mask_resized = cv2.resize(mask_cropped, (bbox_w, bbox_h))
                 
-                # Extraer región de la máscara original
-                bbox_mask = mask[y1:y2, x1:x2]
-                # Aplicar umbral más estricto en la región del bbox
-                bbox_mask_binary = (bbox_mask > 0.5).astype(np.float32)
-                mask_cropped[y1:y2, x1:x2] = bbox_mask_binary
+                # Crear máscara completa
+                mask_full = np.zeros((h_img, w_img), dtype=np.float32)
+                mask_full[y1:y2, x1:x2] = mask_resized
+                
+                return mask_full
             
-            print(f"   ✅ Máscara generada (con prototipos): {mask.shape}, rango: [{mask.min():.3f}, {mask.max():.3f}]")
-            print(f"   📊 Píxeles activos: {np.sum(mask_cropped > 0.5)} de {mask_cropped.size}")
-            
-            return mask_cropped
+            return None
             
         except Exception as e:
-            print(f"   ⚠️  Error con prototipos: {e}, usando fallback")
-            # Fallback: máscara rectangular simple
-            x1, y1, x2, y2 = map(int, bbox)
-            H, W = input_shape
-            
-            mask = np.zeros((H, W), dtype=np.float32)
-            mask[y1:y2, x1:x2] = 1.0
-            
-            print(f"   ✅ Máscara fallback generada: {mask.shape}, píxeles activos: {np.sum(mask > 0.5)}")
-            return mask
+            print(f"   ⚠️ Error generando máscara: {e}")
+            return None
     
     def _bbox_to_contour(self, x1, y1, x2, y2):
         """Convierte bbox a contorno"""

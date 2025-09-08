@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_segmentacion_piezas_20250908_122936.jpg",
-  "timestamp_procesamiento": "2025-09-08T12:29:37.615704",
-  "timestamp_captura": "20250908_122936",
+  "archivo_imagen": "cople_segmentacion_piezas_20250908_164112.jpg",
+  "timestamp_procesamiento": "2025-09-08T16:41:13.513964",
+  "timestamp_captura": "20250908_164112",
   "tipo_analisis": "segmentacion_piezas",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,22 +30,22 @@
       {
         "id": 1,
         "clase": "Cople",
-        "confianza": 0.5000002384185791,
+        "confianza": 0.7240778803825378,
         "bbox": {
-          "x1": 442,
-          "y1": 172,
-          "x2": 639,
-          "y2": 639
+          "x1": 130,
+          "y1": 57,
+          "x2": 555,
+          "y2": 459
         },
         "centroide": {
-          "x": 613,
-          "y": 249
+          "x": 342,
+          "y": 258
         },
-        "area_bbox": 91856,
-        "area_mascara": 17242,
+        "area_bbox": 170912,
+        "area_mascara": 165398,
         "dimensiones_mascara": {
-          "ancho": 196,
-          "alto": 466
+          "ancho": 424,
+          "alto": 401
         },
         "tiene_mascara": true,
         "info_mascara": {
@@ -58,8 +58,15 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 17242
-        }
+          "pixels_activos": 165398
+        },
+        "coeficientes_mascara": [
+          -0.5054115056991577,
+          -1.3858859539031982,
+          0.39722609519958496,
+          -0.16927233338356018,
+          0.05540028214454651
+        ]
       }
     ]
   },
@@ -70,11 +77,11 @@
   },
   "estadisticas": {
     "total_piezas": 1,
-    "confianza_promedio": 0.5000002384185791,
-    "confianza_maxima": 0.5000002384185791,
-    "confianza_minima": 0.5000002384185791,
-    "area_total_mascaras": 17242,
-    "area_promedio_mascaras": 17242.0,
+    "confianza_promedio": 0.7240778803825378,
+    "confianza_maxima": 0.7240778803825378,
+    "confianza_minima": 0.7240778803825378,
+    "area_total_mascaras": 165398,
+    "area_promedio_mascaras": 165398.0,
     "fusionadas": 0,
     "total_objetos_originales": 1
   }

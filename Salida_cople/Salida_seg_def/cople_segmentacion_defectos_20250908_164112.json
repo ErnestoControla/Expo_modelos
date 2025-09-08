@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_segmentacion_defectos_20250908_123104.jpg",
-  "timestamp_procesamiento": "2025-09-08T12:31:05.456076",
-  "timestamp_captura": "2025-09-08T12:31:05.456076",
+  "archivo_imagen": "cople_segmentacion_defectos_20250908_164112.jpg",
+  "timestamp_procesamiento": "2025-09-08T16:41:13.501088",
+  "timestamp_captura": "2025-09-08T16:41:13.501088",
   "tipo_analisis": "segmentacion_defectos",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,19 +30,19 @@
       {
         "id": 1,
         "clase": "Defecto",
-        "confianza": 0.7057117819786072,
+        "confianza": 0.7049500346183777,
         "bbox": {
-          "x1": 326,
-          "y1": 254,
-          "x2": 380,
-          "y2": 278
+          "x1": 287,
+          "y1": 233,
+          "x2": 317,
+          "y2": 288
         },
         "centroide": {
-          "x": 353,
-          "y": 266
+          "x": 302,
+          "y": 260
         },
-        "area_bbox": 1327,
-        "area_mascara": 976,
+        "area_bbox": 1595,
+        "area_mascara": 1054,
         "dimensiones_mascara": {
           "ancho": 0,
           "alto": 0
@@ -58,32 +58,32 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 976
+          "pixels_activos": 1054
         },
         "coeficientes_mascara": [
-          -0.20252051949501038,
-          -0.24551263451576233,
-          0.1058410257101059,
-          -0.1534380465745926,
-          -0.5122347474098206
+          -0.018435023725032806,
+          -0.1755741834640503,
+          -0.17491230368614197,
+          -0.23500420153141022,
+          -0.20175713300704956
         ]
       },
       {
         "id": 2,
         "clase": "Defecto",
-        "confianza": 0.7018402218818665,
+        "confianza": 0.701832115650177,
         "bbox": {
-          "x1": 316,
+          "x1": 314,
           "y1": 357,
-          "x2": 364,
-          "y2": 389
+          "x2": 363,
+          "y2": 390
         },
         "centroide": {
-          "x": 340,
+          "x": 338,
           "y": 373
         },
-        "area_bbox": 1527,
-        "area_mascara": 1004,
+        "area_bbox": 1569,
+        "area_mascara": 1007,
         "dimensiones_mascara": {
           "ancho": 0,
           "alto": 0
@@ -99,32 +99,32 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 1004
+          "pixels_activos": 1007
         },
         "coeficientes_mascara": [
-          -0.004026591777801514,
-          -0.39926862716674805,
-          0.006273716688156128,
-          -0.22365184128284454,
-          -0.7170766592025757
+          0.009829819202423096,
+          -0.40300503373146057,
+          0.012859702110290527,
+          -0.22542208433151245,
+          -0.7419794201850891
         ]
       },
       {
         "id": 3,
         "clase": "Defecto",
-        "confianza": 0.6820904612541199,
+        "confianza": 0.6956324577331543,
         "bbox": {
           "x1": 459,
-          "y1": 173,
-          "x2": 495,
-          "y2": 206
+          "y1": 174,
+          "x2": 493,
+          "y2": 204
         },
         "centroide": {
-          "x": 477,
-          "y": 190
+          "x": 476,
+          "y": 189
         },
-        "area_bbox": 1171,
-        "area_mascara": 816,
+        "area_bbox": 1038,
+        "area_mascara": 753,
         "dimensiones_mascara": {
           "ancho": 0,
           "alto": 0
@@ -140,30 +140,30 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 816
+          "pixels_activos": 753
         },
         "coeficientes_mascara": [
-          -0.02694512903690338,
-          -0.11806359887123108,
-          0.12041938304901123,
-          -0.1788923144340515,
-          -0.22011524438858032
+          0.04415534436702728,
+          -0.12493659555912018,
+          0.13216066360473633,
+          -0.18835905194282532,
+          -0.24613726139068604
         ]
       }
     ]
   },
   "tiempos": {
-    "captura_ms": 0.14162063598632812,
-    "segmentacion_defectos_ms": 179.94427680969238,
-    "total_ms": 761.3816261291504
+    "captura_ms": 0.3440380096435547,
+    "segmentacion_defectos_ms": 131.93941116333008,
+    "total_ms": 731.4813137054443
   },
   "estadisticas": {
     "total_defectos": 3,
-    "confianza_promedio": 0.6965474883715311,
-    "confianza_maxima": 0.7057117819786072,
-    "confianza_minima": 0.6820904612541199,
-    "area_total_mascaras": 2796,
-    "area_promedio_mascaras": 932.0,
+    "confianza_promedio": 0.700804869333903,
+    "confianza_maxima": 0.7049500346183777,
+    "confianza_minima": 0.6956324577331543,
+    "area_total_mascaras": 2814,
+    "area_promedio_mascaras": 938.0,
     "fusionadas": 0,
     "total_objetos_originales": 3
   }
