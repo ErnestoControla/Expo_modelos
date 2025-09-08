@@ -35,6 +35,26 @@ class CameraConfig:
     STARTUP_TIMEOUT = 5.0     # 5s timeout para primer frame
     SHUTDOWN_TIMEOUT = 2.0    # 2s timeout para cerrar thread
 
+# ==================== CONFIGURACIÓN DE WEBCAM FALLBACK ====================
+class WebcamConfig:
+    """Configuración de webcam como fallback"""
+    
+    # Habilitar fallback automático
+    ENABLE_FALLBACK = True
+    
+    # Configuración de webcam
+    DEFAULT_DEVICE_ID = 0     # ID del dispositivo por defecto
+    WIDTH = 640              # Ancho de la imagen
+    HEIGHT = 640             # Alto de la imagen
+    FPS = 30                 # Frames por segundo
+    
+    # Búsqueda de dispositivos
+    MAX_DEVICES_TO_CHECK = 10  # Máximo número de dispositivos a verificar
+    
+    # Timeouts
+    DETECTION_TIMEOUT = 3.0    # Timeout para detectar webcams
+    INIT_TIMEOUT = 5.0         # Timeout para inicializar webcam
+
 # ==================== CONFIGURACIÓN DE MODELOS ====================
 class ModelsConfig:
     """Configuración de los modelos ONNX"""

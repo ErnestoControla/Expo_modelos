@@ -15,6 +15,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from modules.capture import CamaraTiempoOptimizada
+from modules.capture.webcam_fallback import WebcamFallback, detectar_mejor_webcam
 from modules.classification import ClasificadorCoplesONNX, ProcesadorImagenClasificacion
 from modules.detection import DetectorPiezasCoples, ProcesadorPiezasCoples, DetectorDefectosCoples, ProcesadorDefectos
 from modules.segmentation import SegmentadorDefectosCoples, ProcesadorSegmentacionDefectos
@@ -23,7 +24,7 @@ from modules.segmentation.segmentation_piezas_engine import SegmentadorPiezasCop
 from modules.segmentation.piezas_segmentation_processor import ProcesadorSegmentacionPiezas
 from modules.preprocessing.illumination_robust import RobustezIluminacion
 from modules.adaptive_thresholds import UmbralesAdaptativos
-from config import GlobalConfig, RobustezConfig
+from config import GlobalConfig, RobustezConfig, WebcamConfig
 
 
 class SistemaAnalisisIntegrado:
@@ -35,6 +36,8 @@ class SistemaAnalisisIntegrado:
         """Inicializa el sistema integrado de análisis"""
         # Componentes del sistema
         self.camara = None
+        self.webcam_fallback = None
+        self.usando_webcam = False
         self.clasificador = None
         self.detector_piezas = None
         self.detector_defectos = None
@@ -68,6 +71,42 @@ class SistemaAnalisisIntegrado:
             if not os.path.exists(directorio):
                 os.makedirs(directorio)
     
+    def _inicializar_webcam_fallback(self) -> bool:
+        """
+        Inicializa el fallback a webcam
+        
+        Returns:
+            bool: True si se inicializó correctamente
+        """
+        try:
+            # Detectar mejor webcam disponible
+            webcam_id = detectar_mejor_webcam()
+            if webcam_id is None:
+                print("❌ No se encontraron webcams disponibles")
+                return False
+            
+            print(f"📷 Usando webcam en dispositivo {webcam_id}")
+            
+            # Crear e inicializar webcam
+            self.webcam_fallback = WebcamFallback(
+                device_id=webcam_id,
+                width=WebcamConfig.WIDTH,
+                height=WebcamConfig.HEIGHT
+            )
+            
+            if not self.webcam_fallback.inicializar():
+                print("❌ Error inicializando webcam")
+                return False
+            
+            # Marcar que estamos usando webcam
+            self.usando_webcam = True
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error en fallback a webcam: {e}")
+            return False
+    
     def inicializar(self) -> bool:
         """
         Inicializa todos los componentes del sistema
@@ -78,12 +117,25 @@ class SistemaAnalisisIntegrado:
         try:
             print("🚀 Inicializando sistema integrado de análisis...")
             
-            # 1. Inicializar cámara
+            # 1. Inicializar cámara (con fallback a webcam)
             print("📷 Inicializando cámara...")
             self.camara = CamaraTiempoOptimizada()
             if not self.camara.configurar_camara():
-                print("❌ Error configurando cámara")
-                return False
+                print("❌ Error configurando cámara GigE")
+                
+                # Intentar fallback a webcam si está habilitado
+                if WebcamConfig.ENABLE_FALLBACK:
+                    print("🔄 Intentando fallback a webcam...")
+                    if self._inicializar_webcam_fallback():
+                        print("✅ Fallback a webcam exitoso")
+                    else:
+                        print("❌ Error en fallback a webcam")
+                        return False
+                else:
+                    print("❌ Fallback a webcam deshabilitado")
+                    return False
+            else:
+                print("✅ Cámara GigE inicializada correctamente")
             
             # 2. Inicializar clasificador
             print("🧠 Inicializando clasificador...")
@@ -122,11 +174,17 @@ class SistemaAnalisisIntegrado:
                 return False
             self.procesador_segmentacion_piezas = ProcesadorSegmentacionPiezas()
             
-            # 7. Iniciar captura continua
-            print("🎬 Iniciando captura continua...")
-            if not self.camara.iniciar_captura_continua():
-                print("❌ Error iniciando captura continua")
-                return False
+            # 7. Iniciar captura continua (solo para cámara GigE)
+            if not self.usando_webcam:
+                print("🎬 Iniciando captura continua...")
+                if not self.camara.iniciar_captura_continua():
+                    print("❌ Error iniciando captura continua")
+                    return False
+            else:
+                print("🎬 Iniciando captura continua de webcam...")
+                if not self.webcam_fallback.iniciar_captura_continua():
+                    print("❌ Error iniciando captura continua de webcam")
+                    return False
             
             # 7. Aplicar configuración de robustez por defecto
             print("🔧 Aplicando configuración de robustez por defecto...")
@@ -153,8 +211,13 @@ class SistemaAnalisisIntegrado:
         try:
             tiempo_inicio = time.time()
             
-            # Capturar imagen
-            resultado_captura = self.camara.obtener_frame_instantaneo()
+            # Capturar imagen (usando cámara GigE o webcam según corresponda)
+            if self.usando_webcam and self.webcam_fallback is not None:
+                # Para webcam, usar captura síncrona que es más confiable
+                resultado_captura = self.webcam_fallback.obtener_frame_sincrono()
+            else:
+                resultado_captura = self.camara.obtener_frame_instantaneo()
+                
             if resultado_captura is None or resultado_captura[0] is None:
                 return {"error": "No se pudo capturar imagen"}
             
@@ -834,11 +897,21 @@ class SistemaAnalisisIntegrado:
         if not self.inicializado:
             return {"error": "Sistema no inicializado"}
         
+        # Determinar tipo de cámara y estadísticas
+        if self.usando_webcam and self.webcam_fallback:
+            camara_stats = self.webcam_fallback.obtener_estadisticas()
+            camara_stats["tipo"] = "Webcam Fallback"
+        elif self.camara:
+            camara_stats = self.camara.obtener_estadisticas()
+            camara_stats["tipo"] = "Cámara GigE"
+        else:
+            camara_stats = {"tipo": "No disponible"}
+        
         stats = {
             "sistema": "Integrado (Clasificación + Detección de Piezas + Detección de Defectos + Segmentación de Defectos + Segmentación de Piezas)",
             "resultados_procesados": self.contador_resultados,
-            "camara": self.camara.obtener_estadisticas() if self.camara else {},
-            "clasificador": self.clasificador.obtener_estadisticas() if self.clasificador else {},
+            "camara": camara_stats,
+            "clasificador": {"inicializado": True} if self.clasificador else {},
             "detector_piezas": self.detector_piezas.obtener_estadisticas() if self.detector_piezas else {},
             "detector_defectos": self.detector_defectos.obtener_estadisticas() if self.detector_defectos else {},
             "segmentador_defectos": self.segmentador_defectos.obtener_estadisticas() if self.segmentador_defectos else {},
@@ -854,6 +927,9 @@ class SistemaAnalisisIntegrado:
             
             if self.camara:
                 self.camara.liberar()
+            
+            if self.webcam_fallback:
+                self.webcam_fallback.liberar_recursos()
             
             if self.clasificador:
                 self.clasificador.liberar()

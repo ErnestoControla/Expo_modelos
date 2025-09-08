@@ -120,7 +120,11 @@ class SistemaAnalisisCoples:
         
         # Usar el sistema integrado para obtener el frame
         if hasattr(self, 'sistema_integrado') and self.sistema_integrado.inicializado:
-            return self.sistema_integrado.camara.obtener_frame_instantaneo()
+            # Usar cámara GigE o webcam según corresponda
+            if self.sistema_integrado.usando_webcam and self.sistema_integrado.webcam_fallback:
+                return self.sistema_integrado.webcam_fallback.obtener_frame_sincrono()
+            else:
+                return self.sistema_integrado.camara.obtener_frame_instantaneo()
         else:
             return None, 0, 0
     
@@ -741,10 +745,18 @@ def procesar_comando_estadisticas(sistema):
     # Estadísticas de cámara
     if stats['camara']:
         cam_stats = stats['camara']
-        print(f"📷 CÁMARA:")
-        print(f"   FPS Real: {cam_stats.get('fps_real', 0):.1f}")
-        print(f"   Frames Totales: {cam_stats.get('frames_totales', 0)}")
-        print(f"   Buffers Listos: {cam_stats.get('buffers_listos', 0)}/2")
+        tipo_camara = cam_stats.get('tipo', 'Desconocido')
+        print(f"📷 CÁMARA ({tipo_camara}):")
+        
+        if tipo_camara == "Webcam Fallback":
+            print(f"   Dispositivo: {cam_stats.get('dispositivo', 'N/A')}")
+            print(f"   Resolución: {cam_stats.get('resolucion', 'N/A')}")
+            print(f"   FPS Promedio: {cam_stats.get('fps_promedio', 0):.1f}")
+            print(f"   Frames Capturados: {cam_stats.get('frames_capturados', 0)}")
+        else:
+            print(f"   FPS Real: {cam_stats.get('fps_real', 0):.1f}")
+            print(f"   Frames Totales: {cam_stats.get('frames_totales', 0)}")
+            print(f"   Buffers Listos: {cam_stats.get('buffers_listos', 0)}/2")
         
         # Estadísticas de tiempo
         tiempo_cap = cam_stats.get('tiempo_captura', {})
