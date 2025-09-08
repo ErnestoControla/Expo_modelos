@@ -204,9 +204,9 @@ class SegmentadorDefectosCoples:
                 def timeout_handler(signum, frame):
                     raise TimeoutError("Inferencia ONNX excedió el tiempo límite")
                 
-                # Configurar timeout de 3 segundos (ultra-agresivo)
+                # Configurar timeout de 30 segundos (generoso para análisis completo)
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(1)  # Timeout agresivo para análisis completo
+                signal.alarm(30)  # Timeout generoso para análisis completo
                 
                 try:
                     outputs = self.session.run(

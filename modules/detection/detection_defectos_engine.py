@@ -202,9 +202,9 @@ class DetectorDefectosCoples:
             def timeout_handler(signum, frame):
                 raise TimeoutError("Timeout en detección de defectos")
             
-            # Configurar timeout de 10 segundos
+            # Configurar timeout de 30 segundos (generoso para análisis completo)
             signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(10)
+            signal.alarm(30)
             
             try:
                 outputs = self.session.run(

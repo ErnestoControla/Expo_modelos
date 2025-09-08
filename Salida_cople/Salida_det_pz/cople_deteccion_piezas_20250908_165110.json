@@ -1,0 +1,301 @@
+{
+  "archivo_imagen": "cople_deteccion_piezas_20250908_165110.jpg",
+  "timestamp_procesamiento": "2025-09-08T16:51:10.755192",
+  "timestamp_captura": "2025-09-08T16:51:10.755192",
+  "tipo_analisis": "deteccion_piezas",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleDetPz1C1V.onnx",
+    "tipo": "deteccion_piezas",
+    "clases_disponibles": [
+      "Cople"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "piezas_detectadas": [
+      {
+        "id": 1,
+        "clase": "Cople",
+        "confianza": 0.706896960735321,
+        "bbox": {
+          "x1": 164,
+          "y1": 44,
+          "x2": 578,
+          "y2": 479
+        },
+        "centroide": {
+          "x": 371,
+          "y": 261
+        },
+        "area": 179927
+      },
+      {
+        "id": 2,
+        "clase": "Cople",
+        "confianza": 0.5072093605995178,
+        "bbox": {
+          "x1": 0,
+          "y1": 0,
+          "x2": 75,
+          "y2": 151
+        },
+        "centroide": {
+          "x": 37,
+          "y": 75
+        },
+        "area": 11329
+      },
+      {
+        "id": 3,
+        "clase": "Cople",
+        "confianza": 0.5002540349960327,
+        "bbox": {
+          "x1": 556,
+          "y1": 195,
+          "x2": 639,
+          "y2": 624
+        },
+        "centroide": {
+          "x": 597,
+          "y": 409
+        },
+        "area": 36005
+      },
+      {
+        "id": 4,
+        "clase": "Cople",
+        "confianza": 0.5001170039176941,
+        "bbox": {
+          "x1": 23,
+          "y1": 1,
+          "x2": 472,
+          "y2": 192
+        },
+        "centroide": {
+          "x": 247,
+          "y": 97
+        },
+        "area": 85794
+      },
+      {
+        "id": 5,
+        "clase": "Cople",
+        "confianza": 0.5000091791152954,
+        "bbox": {
+          "x1": 46,
+          "y1": 103,
+          "x2": 65,
+          "y2": 255
+        },
+        "centroide": {
+          "x": 55,
+          "y": 179
+        },
+        "area": 2861
+      },
+      {
+        "id": 6,
+        "clase": "Cople",
+        "confianza": 0.5000054240226746,
+        "bbox": {
+          "x1": 375,
+          "y1": 44,
+          "x2": 501,
+          "y2": 71
+        },
+        "centroide": {
+          "x": 438,
+          "y": 58
+        },
+        "area": 3307
+      },
+      {
+        "id": 7,
+        "clase": "Cople",
+        "confianza": 0.5000020265579224,
+        "bbox": {
+          "x1": 14,
+          "y1": 482,
+          "x2": 79,
+          "y2": 639
+        },
+        "centroide": {
+          "x": 47,
+          "y": 560
+        },
+        "area": 10121
+      },
+      {
+        "id": 8,
+        "clase": "Cople",
+        "confianza": 0.500001072883606,
+        "bbox": {
+          "x1": 54,
+          "y1": 606,
+          "x2": 126,
+          "y2": 639
+        },
+        "centroide": {
+          "x": 90,
+          "y": 623
+        },
+        "area": 2369
+      },
+      {
+        "id": 9,
+        "clase": "Cople",
+        "confianza": 0.5000004172325134,
+        "bbox": {
+          "x1": 100,
+          "y1": 112,
+          "x2": 175,
+          "y2": 261
+        },
+        "centroide": {
+          "x": 137,
+          "y": 187
+        },
+        "area": 11156
+      },
+      {
+        "id": 10,
+        "clase": "Cople",
+        "confianza": 0.5000004172325134,
+        "bbox": {
+          "x1": 252,
+          "y1": 322,
+          "x2": 342,
+          "y2": 469
+        },
+        "centroide": {
+          "x": 297,
+          "y": 396
+        },
+        "area": 13145
+      },
+      {
+        "id": 11,
+        "clase": "Cople",
+        "confianza": 0.5000003576278687,
+        "bbox": {
+          "x1": 37,
+          "y1": 271,
+          "x2": 57,
+          "y2": 424
+        },
+        "centroide": {
+          "x": 47,
+          "y": 348
+        },
+        "area": 3018
+      },
+      {
+        "id": 12,
+        "clase": "Cople",
+        "confianza": 0.5000002980232239,
+        "bbox": {
+          "x1": 96,
+          "y1": 21,
+          "x2": 167,
+          "y2": 60
+        },
+        "centroide": {
+          "x": 132,
+          "y": 41
+        },
+        "area": 2768
+      },
+      {
+        "id": 13,
+        "clase": "Cople",
+        "confianza": 0.5000001788139343,
+        "bbox": {
+          "x1": 235,
+          "y1": 128,
+          "x2": 265,
+          "y2": 187
+        },
+        "centroide": {
+          "x": 250,
+          "y": 157
+        },
+        "area": 1753
+      },
+      {
+        "id": 14,
+        "clase": "Cople",
+        "confianza": 0.5000001788139343,
+        "bbox": {
+          "x1": 89,
+          "y1": 386,
+          "x2": 123,
+          "y2": 450
+        },
+        "centroide": {
+          "x": 106,
+          "y": 418
+        },
+        "area": 2148
+      },
+      {
+        "id": 15,
+        "clase": "Cople",
+        "confianza": 0.5000001192092896,
+        "bbox": {
+          "x1": 87,
+          "y1": 57,
+          "x2": 165,
+          "y2": 97
+        },
+        "centroide": {
+          "x": 126,
+          "y": 77
+        },
+        "area": 3079
+      },
+      {
+        "id": 16,
+        "clase": "Cople",
+        "confianza": 0.5000001192092896,
+        "bbox": {
+          "x1": 376,
+          "y1": 84,
+          "x2": 452,
+          "y2": 118
+        },
+        "centroide": {
+          "x": 414,
+          "y": 101
+        },
+        "area": 2606
+      }
+    ]
+  },
+  "tiempos": {
+    "captura_ms": 31.787633895874023,
+    "deteccion_piezas_ms": 0.0,
+    "total_ms": 93.76811981201172
+  },
+  "estadisticas": {
+    "total_piezas": 16,
+    "confianza_promedio": 0.5134060718119144,
+    "confianza_maxima": 0.706896960735321,
+    "confianza_minima": 0.5000001192092896,
+    "area_total": 371386,
+    "area_promedio": 23211.625
+  }
+}

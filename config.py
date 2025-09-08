@@ -82,10 +82,10 @@ class ModelsConfig:
     SEGMENTATION_PARTS_MODEL = "CopleSegPZ1C1V.onnx"
     SEGMENTATION_PARTS_CLASSES = "clases_CopleSegPZ1C1V.txt"
     
-    # Parámetros de inferencia - CONFIGURACIÓN MODERADA PARA ROBUSTEZ
+    # Parámetros de inferencia - CONFIGURACIÓN ALTA PRECISIÓN
     INPUT_SIZE = 640          # Resolución del modelo (640x640)
-    CONFIDENCE_THRESHOLD = 0.3  # Configuración moderada (mejor rendimiento en condiciones difíciles)
-    IOU_THRESHOLD = 0.2       # IoU threshold moderado para eliminar duplicados
+    CONFIDENCE_THRESHOLD = 0.55  # Configuración alta precisión (mejor calidad de detección)
+    IOU_THRESHOLD = 0.35      # IoU threshold alto para eliminar duplicados
     MAX_DETECTIONS = 30       # Aumentado para permitir más detecciones
     
     # Configuración ONNX
@@ -122,8 +122,8 @@ class RobustezConfig:
         'descripcion': 'Configuración ultra permisiva - para condiciones extremas'
     }
     
-    # Configuración por defecto (moderada)
-    CONFIGURACION_DEFAULT = UMBRALES_MODERADA
+    # Configuración por defecto (alta precisión)
+    CONFIGURACION_DEFAULT = UMBRALES_ORIGINAL
     
     # Parámetros de preprocesamiento
     APLICAR_PREPROCESAMIENTO = False  # Por defecto desactivado para evitar colgadas

@@ -189,7 +189,17 @@ class SistemaAnalisisIntegrado:
             
             # 7. Aplicar configuración de robustez por defecto
             print("🔧 Aplicando configuración de robustez por defecto...")
-            self.aplicar_configuracion_robustez("moderada")
+            config_default = RobustezConfig.CONFIGURACION_DEFAULT
+            if config_default == RobustezConfig.UMBRALES_ORIGINAL:
+                self.aplicar_configuracion_robustez("original")
+            elif config_default == RobustezConfig.UMBRALES_MODERADA:
+                self.aplicar_configuracion_robustez("moderada")
+            elif config_default == RobustezConfig.UMBRALES_PERMISIVA:
+                self.aplicar_configuracion_robustez("permisiva")
+            elif config_default == RobustezConfig.UMBRALES_ULTRA_PERMISIVA:
+                self.aplicar_configuracion_robustez("ultra_permisiva")
+            else:
+                self.aplicar_configuracion_robustez("original")  # Fallback a original
             
             self.inicializado = True
             print("✅ Sistema integrado inicializado correctamente")
@@ -278,23 +288,13 @@ class SistemaAnalisisIntegrado:
             tiempo_captura = (time.time() - tiempo_captura_inicio) * 1000
             print(f"✅ Imagen capturada en {tiempo_captura:.2f} ms")
             
-            # Verificar frame capturado
-            print(f"🔍 DEBUG - Frame capturado:")
-            print(f"   Tipo: {type(frame)}")
-            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
-            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
-            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
-            print(f"   ID del objeto: {id(frame)}")
+            # Verificar frame capturado (logs simplificados)
+            print(f"📊 Frame capturado: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
             
             tiempo_inicio_total = time.time()
             
             # 3. CLASIFICACIÓN (SECUENCIAL)
             print("\n🧠 EJECUTANDO CLASIFICACIÓN...")
-            print(f"🔍 DEBUG - Frame para clasificación:")
-            print(f"   Tipo: {type(frame)}")
-            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
-            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
-            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
             
             tiempo_clasificacion_inicio = time.time()
             resultado_clasificacion = self.clasificador.clasificar(frame)
@@ -302,15 +302,9 @@ class SistemaAnalisisIntegrado:
             clase_predicha, confianza, tiempo_inferencia_clas = resultado_clasificacion
             print(f"✅ Clasificación completada en {tiempo_clasificacion:.2f} ms")
             print(f"   Resultado: {clase_predicha} ({confianza:.2%})")
-            print(f"   🔍 Frame ID después de clasificación: {id(frame)}")
             
             # 4. DETECCIÓN DE PIEZAS (SECUENCIAL)
             print("\n🎯 EJECUTANDO DETECCIÓN DE PIEZAS...")
-            print(f"🔍 DEBUG - Frame para detección de piezas:")
-            print(f"   Tipo: {type(frame)}")
-            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
-            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
-            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
             
             # SOLUCIÓN CRÍTICA: Reinicializar detector de piezas antes de usar
             print("   🔧 Reinicializando detector de piezas...")
@@ -326,7 +320,6 @@ class SistemaAnalisisIntegrado:
                 tiempo_deteccion_piezas = (time.time() - tiempo_deteccion_piezas_inicio) * 1000
                 print(f"✅ Detección de piezas completada en {tiempo_deteccion_piezas:.2f} ms")
                 print(f"   Piezas detectadas: {len(detecciones_piezas)}")
-                print(f"   🔍 Frame ID después de detección de piezas: {id(frame)}")
                 
             except Exception as e:
                 print(f"❌ ERROR en detección de piezas: {e}")
@@ -335,12 +328,6 @@ class SistemaAnalisisIntegrado:
             
             # 5. DETECCIÓN DE DEFECTOS (SECUENCIAL)
             print("\n🔍 EJECUTANDO DETECCIÓN DE DEFECTOS...")
-            print(f"🔍 DEBUG - Frame para detección de defectos:")
-            print(f"   Tipo: {type(frame)}")
-            print(f"   Shape: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
-            print(f"   Dtype: {frame.dtype if hasattr(frame, 'dtype') else 'No dtype'}")
-            print(f"   Rango valores: [{frame.min() if hasattr(frame, 'min') else 'N/A'}, {frame.max() if hasattr(frame, 'max') else 'N/A'}]")
-            print(f"   ID del objeto: {id(frame)}")
             
             # SOLUCIÓN CRÍTICA: Reinicializar detector de defectos antes de usar
             print("   🔧 Reinicializando detector de defectos...")
@@ -465,6 +452,10 @@ class SistemaAnalisisIntegrado:
             # 10. Reanudar captura continua
             print("▶️ Reanudando captura continua...")
             self.camara.reanudar_captura_continua()
+            
+            # 11. Pausa mínima para estabilizar sistema
+            print("⏸️ Pausa de 0.5 segundos para estabilizar sistema...")
+            time.sleep(0.5)
             
             print(f"\n🎉 ANÁLISIS COMPLETO FINALIZADO EN {tiempo_total:.2f} ms")
             return resultados

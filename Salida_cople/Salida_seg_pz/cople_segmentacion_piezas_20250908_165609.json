@@ -1,0 +1,88 @@
+{
+  "archivo_imagen": "cople_segmentacion_piezas_20250908_165609.jpg",
+  "timestamp_procesamiento": "2025-09-08T16:56:09.915960",
+  "timestamp_captura": "20250908_165609",
+  "tipo_analisis": "segmentacion_piezas",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleSegPZ1C1V.onnx",
+    "tipo": "segmentacion_piezas",
+    "clases_disponibles": [
+      "Cople"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "piezas_segmentadas": [
+      {
+        "id": 1,
+        "clase": "Cople",
+        "confianza": 0.7237593531608582,
+        "bbox": {
+          "x1": 130,
+          "y1": 57,
+          "x2": 555,
+          "y2": 457
+        },
+        "centroide": {
+          "x": 343,
+          "y": 257
+        },
+        "area_bbox": 170074,
+        "area_mascara": 164578,
+        "dimensiones_mascara": {
+          "ancho": 424,
+          "alto": 399
+        },
+        "tiene_mascara": true,
+        "info_mascara": {
+          "shape": [
+            640,
+            640
+          ],
+          "tipo": "float32",
+          "rango": [
+            0.0,
+            1.0
+          ],
+          "pixels_activos": 164578
+        },
+        "coeficientes_mascara": [
+          -0.4909144937992096,
+          -1.3250714540481567,
+          0.39950841665267944,
+          -0.1656990796327591,
+          0.0703393965959549
+        ]
+      }
+    ]
+  },
+  "tiempos": {
+    "captura_ms": 0.0,
+    "segmentacion_piezas_ms": 0.0,
+    "total_ms": 0.0
+  },
+  "estadisticas": {
+    "total_piezas": 1,
+    "confianza_promedio": 0.7237593531608582,
+    "confianza_maxima": 0.7237593531608582,
+    "confianza_minima": 0.7237593531608582,
+    "area_total_mascaras": 164578,
+    "area_promedio_mascaras": 164578.0,
+    "fusionadas": 0,
+    "total_objetos_originales": 1
+  }
+}

@@ -963,8 +963,8 @@ def procesar_comando_robustez(sistema):
     
     while True:
         print("\nOpciones de robustez:")
-        print("  1. Configuración Original (conf=0.55, iou=0.35)")
-        print("  2. Configuración Moderada (conf=0.3, iou=0.2) - RECOMENDADA")
+        print("  1. Configuración Original (conf=0.55, iou=0.35) - RECOMENDADA")
+        print("  2. Configuración Moderada (conf=0.3, iou=0.2)")
         print("  3. Configuración Permisiva (conf=0.1, iou=0.1)")
         print("  4. Configuración Ultra Permisiva (conf=0.01, iou=0.01)")
         print("  5. Configuración Automática (basada en iluminación)")
