@@ -1,0 +1,61 @@
+{
+  "archivo_imagen": "cople_deteccion_piezas_20250908_123104.jpg",
+  "timestamp_procesamiento": "2025-09-08T12:31:05.434343",
+  "timestamp_captura": "2025-09-08T12:31:05.434343",
+  "tipo_analisis": "deteccion_piezas",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleDetPz1C1V.onnx",
+    "tipo": "deteccion_piezas",
+    "clases_disponibles": [
+      "Cople"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "piezas_detectadas": [
+      {
+        "id": 1,
+        "clase": "Cople",
+        "confianza": 0.7089043855667114,
+        "bbox": {
+          "x1": 122,
+          "y1": 39,
+          "x2": 569,
+          "y2": 464
+        },
+        "centroide": {
+          "x": 346,
+          "y": 252
+        },
+        "area": 190005
+      }
+    ]
+  },
+  "tiempos": {
+    "captura_ms": 0.14162063598632812,
+    "deteccion_piezas_ms": 79.25295829772949,
+    "total_ms": 761.3816261291504
+  },
+  "estadisticas": {
+    "total_piezas": 1,
+    "confianza_promedio": 0.7089043855667114,
+    "confianza_maxima": 0.7089043855667114,
+    "confianza_minima": 0.7089043855667114,
+    "area_total": 190005,
+    "area_promedio": 190005.0
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "archivo_imagen": "clasificacion_20250908_121857_2.jpg",
+  "timestamp_procesamiento": "2025-09-08T12:18:57.851795",
+  "timestamp_captura": "20250908_121857",
+  "tipo_analisis": "clasificacion",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleClasDef2C1V.onnx",
+    "tipo": "clasificacion",
+    "clases_disponibles": [
+      "Aceptado",
+      "Rechazado"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "clasificacion": {
+      "clase": "Aceptado",
+      "confianza": 0.7844465374946594,
+      "tiempo_inferencia_ms": 39.81304168701172
+    }
+  },
+  "tiempos": {
+    "captura_ms": 61.914920806884766,
+    "clasificacion_ms": 39.85714912414551,
+    "total_ms": 39.85786437988281
+  },
+  "estadisticas": {
+    "total_clasificaciones": 1,
+    "confianza_promedio": 0.7844465374946594,
+    "confianza_maxima": 0.7844465374946594,
+    "confianza_minima": 0.7844465374946594
+  }
+}

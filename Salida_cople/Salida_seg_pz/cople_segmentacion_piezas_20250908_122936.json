@@ -1,0 +1,81 @@
+{
+  "archivo_imagen": "cople_segmentacion_piezas_20250908_122936.jpg",
+  "timestamp_procesamiento": "2025-09-08T12:29:37.615704",
+  "timestamp_captura": "20250908_122936",
+  "tipo_analisis": "segmentacion_piezas",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleSegPZ1C1V.onnx",
+    "tipo": "segmentacion_piezas",
+    "clases_disponibles": [
+      "Cople"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "piezas_segmentadas": [
+      {
+        "id": 1,
+        "clase": "Cople",
+        "confianza": 0.5000002384185791,
+        "bbox": {
+          "x1": 442,
+          "y1": 172,
+          "x2": 639,
+          "y2": 639
+        },
+        "centroide": {
+          "x": 613,
+          "y": 249
+        },
+        "area_bbox": 91856,
+        "area_mascara": 17242,
+        "dimensiones_mascara": {
+          "ancho": 196,
+          "alto": 466
+        },
+        "tiene_mascara": true,
+        "info_mascara": {
+          "shape": [
+            640,
+            640
+          ],
+          "tipo": "float32",
+          "rango": [
+            0.0,
+            1.0
+          ],
+          "pixels_activos": 17242
+        }
+      }
+    ]
+  },
+  "tiempos": {
+    "captura_ms": 0.0,
+    "segmentacion_piezas_ms": 0.0,
+    "total_ms": 0.0
+  },
+  "estadisticas": {
+    "total_piezas": 1,
+    "confianza_promedio": 0.5000002384185791,
+    "confianza_maxima": 0.5000002384185791,
+    "confianza_minima": 0.5000002384185791,
+    "area_total_mascaras": 17242,
+    "area_promedio_mascaras": 17242.0,
+    "fusionadas": 0,
+    "total_objetos_originales": 1
+  }
+}

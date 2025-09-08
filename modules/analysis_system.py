@@ -91,7 +91,8 @@ class SistemaAnalisisIntegrado:
             self.webcam_fallback = WebcamFallback(
                 device_id=webcam_id,
                 width=WebcamConfig.WIDTH,
-                height=WebcamConfig.HEIGHT
+                height=WebcamConfig.HEIGHT,
+                use_crop=WebcamConfig.USE_CROP
             )
             
             if not self.webcam_fallback.inicializar():

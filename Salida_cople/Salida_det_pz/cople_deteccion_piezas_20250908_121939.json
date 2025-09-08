@@ -1,0 +1,77 @@
+{
+  "archivo_imagen": "cople_deteccion_piezas_20250908_121939.jpg",
+  "timestamp_procesamiento": "2025-09-08T12:19:39.489649",
+  "timestamp_captura": "2025-09-08T12:19:39.489649",
+  "tipo_analisis": "deteccion_piezas",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleDetPz1C1V.onnx",
+    "tipo": "deteccion_piezas",
+    "clases_disponibles": [
+      "Cople"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "piezas_detectadas": [
+      {
+        "id": 1,
+        "clase": "Cople",
+        "confianza": 0.7053249478340149,
+        "bbox": {
+          "x1": 130,
+          "y1": 17,
+          "x2": 639,
+          "y2": 462
+        },
+        "centroide": {
+          "x": 384,
+          "y": 239
+        },
+        "area": 226410
+      },
+      {
+        "id": 2,
+        "clase": "Cople",
+        "confianza": 0.5847283005714417,
+        "bbox": {
+          "x1": 0,
+          "y1": 0,
+          "x2": 86,
+          "y2": 462
+        },
+        "centroide": {
+          "x": 43,
+          "y": 231
+        },
+        "area": 40032
+      }
+    ]
+  },
+  "tiempos": {
+    "captura_ms": 294.0642833709717,
+    "deteccion_piezas_ms": 0.0,
+    "total_ms": 78.17864418029785
+  },
+  "estadisticas": {
+    "total_piezas": 2,
+    "confianza_promedio": 0.6450266242027283,
+    "confianza_maxima": 0.7053249478340149,
+    "confianza_minima": 0.5847283005714417,
+    "area_total": 266442,
+    "area_promedio": 133221.0
+  }
+}

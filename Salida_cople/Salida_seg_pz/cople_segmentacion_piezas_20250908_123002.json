@@ -1,0 +1,46 @@
+{
+  "archivo_imagen": "cople_segmentacion_piezas_20250908_123002.jpg",
+  "timestamp_procesamiento": "2025-09-08T12:30:03.517481",
+  "timestamp_captura": "20250908_123002",
+  "tipo_analisis": "segmentacion_piezas",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleSegPZ1C1V.onnx",
+    "tipo": "segmentacion_piezas",
+    "clases_disponibles": [
+      "Cople"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "piezas_segmentadas": []
+  },
+  "tiempos": {
+    "captura_ms": 0.0,
+    "segmentacion_piezas_ms": 0.0,
+    "total_ms": 0.0
+  },
+  "estadisticas": {
+    "total_piezas": 0,
+    "confianza_promedio": 0.0,
+    "confianza_maxima": 0.0,
+    "confianza_minima": 0.0,
+    "area_total_mascaras": 0,
+    "area_promedio_mascaras": 0.0,
+    "fusionadas": 0,
+    "total_objetos_originales": 0
+  }
+}

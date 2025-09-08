@@ -16,18 +16,30 @@ class WebcamFallback:
     Controlador de webcam como fallback para la cámara GigE
     """
     
-    def __init__(self, device_id: int = 0, width: int = 640, height: int = 640):
+    def __init__(self, device_id: int = 0, width: int = 640, height: int = 640, use_crop: bool = True):
         """
         Inicializa el controlador de webcam
         
         Args:
             device_id: ID del dispositivo de cámara (0, 1, 2, etc.)
-            width: Ancho de la imagen
-            height: Alto de la imagen
+            width: Ancho de la imagen objetivo
+            height: Alto de la imagen objetivo
+            use_crop: Si True, usa recorte en lugar de redimensionado
         """
         self.device_id = device_id
-        self.width = width
-        self.height = height
+        self.target_width = width
+        self.target_height = height
+        self.use_crop = use_crop
+        
+        # Resolución nativa de la webcam (se detectará automáticamente)
+        self.native_width = None
+        self.native_height = None
+        
+        # Parámetros de recorte
+        self.crop_x = 0
+        self.crop_y = 0
+        self.crop_width = width
+        self.crop_height = height
         
         # Estado de la cámara
         self.cap = None
@@ -75,6 +87,71 @@ class WebcamFallback:
             
         return webcams_disponibles
     
+    def _calcular_parametros_recorte(self):
+        """
+        Calcula los parámetros de recorte para mantener la resolución nativa
+        """
+        if not self.native_width or not self.native_height:
+            return
+            
+        if self.use_crop:
+            # Calcular el recorte centrado
+            if self.native_width >= self.target_width and self.native_height >= self.target_height:
+                # La webcam tiene resolución suficiente, usar recorte
+                self.crop_x = (self.native_width - self.target_width) // 2
+                self.crop_y = (self.native_height - self.target_height) // 2
+                self.crop_width = self.target_width
+                self.crop_height = self.target_height
+                
+                print(f"📐 Recorte configurado:")
+                print(f"   Resolución nativa: {self.native_width}x{self.native_height}")
+                print(f"   Recorte: {self.crop_width}x{self.crop_height} desde ({self.crop_x}, {self.crop_y})")
+            else:
+                # La webcam tiene resolución menor, usar redimensionado
+                self.use_crop = False
+                print(f"⚠️ Resolución nativa menor que objetivo, usando redimensionado")
+                print(f"   Resolución nativa: {self.native_width}x{self.native_height}")
+                print(f"   Objetivo: {self.target_width}x{self.target_height}")
+        else:
+            print(f"📐 Redimensionado configurado:")
+            print(f"   Resolución nativa: {self.native_width}x{self.native_height}")
+            print(f"   Objetivo: {self.target_width}x{self.target_height}")
+    
+    def _procesar_frame(self, frame: np.ndarray) -> np.ndarray:
+        """
+        Procesa el frame según la configuración (recorte o redimensionado)
+        
+        Args:
+            frame: Frame original de la webcam
+            
+        Returns:
+            np.ndarray: Frame procesado
+        """
+        if frame is None:
+            return None
+            
+        if self.use_crop:
+            # Usar recorte para mantener resolución nativa
+            try:
+                # Verificar que el recorte esté dentro de los límites
+                if (self.crop_x + self.crop_width <= frame.shape[1] and 
+                    self.crop_y + self.crop_height <= frame.shape[0]):
+                    processed_frame = frame[
+                        self.crop_y:self.crop_y + self.crop_height,
+                        self.crop_x:self.crop_x + self.crop_width
+                    ]
+                else:
+                    # Si el recorte está fuera de límites, usar redimensionado
+                    processed_frame = cv2.resize(frame, (self.target_width, self.target_height))
+            except Exception as e:
+                print(f"⚠️ Error en recorte, usando redimensionado: {e}")
+                processed_frame = cv2.resize(frame, (self.target_width, self.target_height))
+        else:
+            # Usar redimensionado
+            processed_frame = cv2.resize(frame, (self.target_width, self.target_height))
+            
+        return processed_frame
+    
     def inicializar(self, device_id: Optional[int] = None) -> bool:
         """
         Inicializa la webcam
@@ -98,21 +175,32 @@ class WebcamFallback:
                 print(f"❌ No se pudo abrir la webcam en dispositivo {self.device_id}")
                 return False
             
-            # Configurar resolución
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            
             # Configurar FPS
             self.cap.set(cv2.CAP_PROP_FPS, 30)
             
-            # Verificar configuración
-            actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            # Configurar a la resolución máxima posible primero
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+            
+            # Leer un frame para estabilizar la configuración
+            ret, _ = self.cap.read()
+            if ret:
+                # Obtener resolución nativa real de la webcam
+                self.native_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                self.native_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            else:
+                # Fallback a resolución por defecto
+                self.native_width = 640
+                self.native_height = 480
+                
             actual_fps = self.cap.get(cv2.CAP_PROP_FPS)
             
             print(f"✅ Webcam configurada:")
-            print(f"   📐 Resolución: {actual_width}x{actual_height}")
+            print(f"   📐 Resolución nativa: {self.native_width}x{self.native_height}")
             print(f"   🎬 FPS: {actual_fps:.1f}")
+            
+            # Calcular parámetros de recorte o redimensionado
+            self._calcular_parametros_recorte()
             
             # Probar captura
             ret, frame = self.cap.read()
@@ -164,9 +252,8 @@ class WebcamFallback:
             try:
                 ret, frame = self.cap.read()
                 if ret and frame is not None:
-                    # Redimensionar si es necesario
-                    if frame.shape[:2] != (self.height, self.width):
-                        frame = cv2.resize(frame, (self.width, self.height))
+                    # Procesar frame (recorte o redimensionado)
+                    frame = self._procesar_frame(frame)
                     
                     # Actualizar frame más reciente
                     with self.frame_lock:
@@ -227,9 +314,8 @@ class WebcamFallback:
         try:
             ret, frame = self.cap.read()
             if ret and frame is not None:
-                # Redimensionar si es necesario
-                if frame.shape[:2] != (self.height, self.width):
-                    frame = cv2.resize(frame, (self.width, self.height))
+                # Procesar frame (recorte o redimensionado)
+                frame = self._procesar_frame(frame)
                 
                 tiempo_acceso = (time.time() - start_time) * 1000
                 timestamp = time.time()
@@ -280,7 +366,15 @@ class WebcamFallback:
         
         return {
             "dispositivo": self.device_id,
-            "resolucion": f"{self.width}x{self.height}",
+            "resolucion_nativa": f"{self.native_width}x{self.native_height}" if self.native_width else "N/A",
+            "resolucion_objetivo": f"{self.target_width}x{self.target_height}",
+            "metodo_procesamiento": "recorte" if self.use_crop else "redimensionado",
+            "parametros_recorte": {
+                "x": self.crop_x,
+                "y": self.crop_y,
+                "width": self.crop_width,
+                "height": self.crop_height
+            } if self.use_crop else None,
             "frames_capturados": self.total_frames_captured,
             "tiempo_transcurrido": tiempo_transcurrido,
             "fps_promedio": fps_promedio,

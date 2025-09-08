@@ -750,7 +750,15 @@ def procesar_comando_estadisticas(sistema):
         
         if tipo_camara == "Webcam Fallback":
             print(f"   Dispositivo: {cam_stats.get('dispositivo', 'N/A')}")
-            print(f"   Resolución: {cam_stats.get('resolucion', 'N/A')}")
+            print(f"   Resolución Nativa: {cam_stats.get('resolucion_nativa', 'N/A')}")
+            print(f"   Resolución Objetivo: {cam_stats.get('resolucion_objetivo', 'N/A')}")
+            print(f"   Método: {cam_stats.get('metodo_procesamiento', 'N/A')}")
+            
+            # Mostrar parámetros de recorte si está disponible
+            parametros_recorte = cam_stats.get('parametros_recorte')
+            if parametros_recorte:
+                print(f"   Recorte: {parametros_recorte['width']}x{parametros_recorte['height']} desde ({parametros_recorte['x']}, {parametros_recorte['y']})")
+            
             print(f"   FPS Promedio: {cam_stats.get('fps_promedio', 0):.1f}")
             print(f"   Frames Capturados: {cam_stats.get('frames_capturados', 0)}")
         else:

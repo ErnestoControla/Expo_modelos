@@ -44,9 +44,14 @@ class WebcamConfig:
     
     # Configuración de webcam
     DEFAULT_DEVICE_ID = 0     # ID del dispositivo por defecto
-    WIDTH = 640              # Ancho de la imagen
-    HEIGHT = 640             # Alto de la imagen
+    WIDTH = 640              # Ancho de la imagen objetivo
+    HEIGHT = 640             # Alto de la imagen objetivo
     FPS = 30                 # Frames por segundo
+    USE_CROP = True          # Usar recorte en lugar de redimensionado
+    
+    # Resolución nativa detectada de la webcam
+    NATIVE_WIDTH = 1280      # Resolución nativa real detectada
+    NATIVE_HEIGHT = 720      # Resolución nativa real detectada
     
     # Búsqueda de dispositivos
     MAX_DEVICES_TO_CHECK = 10  # Máximo número de dispositivos a verificar

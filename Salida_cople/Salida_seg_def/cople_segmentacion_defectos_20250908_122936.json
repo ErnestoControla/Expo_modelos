@@ -1,0 +1,46 @@
+{
+  "archivo_imagen": "cople_segmentacion_defectos_20250908_122936.jpg",
+  "timestamp_procesamiento": "2025-09-08T12:29:37.609211",
+  "timestamp_captura": "2025-09-08T12:29:37.609211",
+  "tipo_analisis": "segmentacion_defectos",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleSegDef1C8V.onnx",
+    "tipo": "segmentacion_defectos",
+    "clases_disponibles": [
+      "Defecto"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "defectos_segmentadas": []
+  },
+  "tiempos": {
+    "captura_ms": 220.17693519592285,
+    "segmentacion_defectos_ms": 107.39731788635254,
+    "total_ms": 650.1202583312988
+  },
+  "estadisticas": {
+    "total_defectos": 0,
+    "confianza_promedio": 0.0,
+    "confianza_maxima": 0.0,
+    "confianza_minima": 0.0,
+    "area_total_mascaras": 0,
+    "area_promedio_mascaras": 0.0,
+    "fusionadas": 0,
+    "total_objetos_originales": 0
+  }
+}

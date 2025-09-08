@@ -1,0 +1,221 @@
+{
+  "archivo_imagen": "cople_deteccion_piezas_20250908_115920.jpg",
+  "timestamp_procesamiento": "2025-09-08T11:59:20.126101",
+  "timestamp_captura": "2025-09-08T11:59:20.126101",
+  "tipo_analisis": "deteccion_piezas",
+  "version_metadatos": "1.0",
+  "modelo": {
+    "nombre": "CopleDetPz1C1V.onnx",
+    "tipo": "deteccion_piezas",
+    "clases_disponibles": [
+      "Cople"
+    ]
+  },
+  "imagen": {
+    "resolucion": {
+      "ancho": 640,
+      "alto": 640,
+      "canales": 3
+    },
+    "formato": "RGB",
+    "tipo": "uint8"
+  },
+  "sistema": {
+    "version": "1.0",
+    "plataforma": "Linux",
+    "framework": "ONNX Runtime"
+  },
+  "resultados": {
+    "piezas_detectadas": [
+      {
+        "id": 1,
+        "clase": "Cople",
+        "confianza": 0.6140322685241699,
+        "bbox": {
+          "x1": 168,
+          "y1": 225,
+          "x2": 475,
+          "y2": 512
+        },
+        "centroide": {
+          "x": 322,
+          "y": 369
+        },
+        "area": 87814
+      },
+      {
+        "id": 2,
+        "clase": "Cople",
+        "confianza": 0.5856545567512512,
+        "bbox": {
+          "x1": 464,
+          "y1": 0,
+          "x2": 639,
+          "y2": 477
+        },
+        "centroide": {
+          "x": 552,
+          "y": 238
+        },
+        "area": 83806
+      },
+      {
+        "id": 3,
+        "clase": "Cople",
+        "confianza": 0.5023214221000671,
+        "bbox": {
+          "x1": 54,
+          "y1": 0,
+          "x2": 494,
+          "y2": 352
+        },
+        "centroide": {
+          "x": 274,
+          "y": 176
+        },
+        "area": 155016
+      },
+      {
+        "id": 4,
+        "clase": "Cople",
+        "confianza": 0.5000452399253845,
+        "bbox": {
+          "x1": 0,
+          "y1": 0,
+          "x2": 84,
+          "y2": 108
+        },
+        "centroide": {
+          "x": 42,
+          "y": 54
+        },
+        "area": 9086
+      },
+      {
+        "id": 5,
+        "clase": "Cople",
+        "confianza": 0.5000006556510925,
+        "bbox": {
+          "x1": 0,
+          "y1": 45,
+          "x2": 29,
+          "y2": 133
+        },
+        "centroide": {
+          "x": 14,
+          "y": 89
+        },
+        "area": 2565
+      },
+      {
+        "id": 6,
+        "clase": "Cople",
+        "confianza": 0.5000006556510925,
+        "bbox": {
+          "x1": 52,
+          "y1": 78,
+          "x2": 73,
+          "y2": 232
+        },
+        "centroide": {
+          "x": 63,
+          "y": 155
+        },
+        "area": 3227
+      },
+      {
+        "id": 7,
+        "clase": "Cople",
+        "confianza": 0.5000005960464478,
+        "bbox": {
+          "x1": 39,
+          "y1": 324,
+          "x2": 56,
+          "y2": 443
+        },
+        "centroide": {
+          "x": 48,
+          "y": 383
+        },
+        "area": 2098
+      },
+      {
+        "id": 8,
+        "clase": "Cople",
+        "confianza": 0.5000002384185791,
+        "bbox": {
+          "x1": 355,
+          "y1": 96,
+          "x2": 393,
+          "y2": 151
+        },
+        "centroide": {
+          "x": 374,
+          "y": 123
+        },
+        "area": 2131
+      },
+      {
+        "id": 9,
+        "clase": "Cople",
+        "confianza": 0.5000002384185791,
+        "bbox": {
+          "x1": 1,
+          "y1": 130,
+          "x2": 39,
+          "y2": 169
+        },
+        "centroide": {
+          "x": 20,
+          "y": 149
+        },
+        "area": 1469
+      },
+      {
+        "id": 10,
+        "clase": "Cople",
+        "confianza": 0.5000002384185791,
+        "bbox": {
+          "x1": 155,
+          "y1": 177,
+          "x2": 200,
+          "y2": 229
+        },
+        "centroide": {
+          "x": 177,
+          "y": 203
+        },
+        "area": 2322
+      },
+      {
+        "id": 11,
+        "clase": "Cople",
+        "confianza": 0.5000001788139343,
+        "bbox": {
+          "x1": 126,
+          "y1": 290,
+          "x2": 150,
+          "y2": 370
+        },
+        "centroide": {
+          "x": 138,
+          "y": 330
+        },
+        "area": 1862
+      }
+    ]
+  },
+  "tiempos": {
+    "captura_ms": 21.55280113220215,
+    "deteccion_piezas_ms": 0.0,
+    "total_ms": 87.4180793762207
+  },
+  "estadisticas": {
+    "total_piezas": 11,
+    "confianza_promedio": 0.5183687535199252,
+    "confianza_maxima": 0.6140322685241699,
+    "confianza_minima": 0.5000001788139343,
+    "area_total": 351396,
+    "area_promedio": 31945.090909090908
+  }
+}
