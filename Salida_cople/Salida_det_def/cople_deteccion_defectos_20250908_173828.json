@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_deteccion_defectos_20250908_171910.jpg",
-  "timestamp_procesamiento": "2025-09-08T17:19:11.132255",
-  "timestamp_captura": "2025-09-08T17:19:11.132255",
+  "archivo_imagen": "cople_deteccion_defectos_20250908_173828.jpg",
+  "timestamp_procesamiento": "2025-09-08T17:38:29.382105",
+  "timestamp_captura": "2025-09-08T17:38:29.382105",
   "tipo_analisis": "deteccion_defectos",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,9 +30,9 @@
       {
         "id": 1,
         "clase": "Defecto",
-        "confianza": 0.6920045018196106,
+        "confianza": 0.6910554766654968,
         "bbox": {
-          "x1": 303,
+          "x1": 304,
           "y1": 350,
           "x2": 368,
           "y2": 395
@@ -41,12 +41,12 @@
           "x": 336,
           "y": 372
         },
-        "area": 2931
+        "area": 2898
       },
       {
         "id": 2,
         "clase": "Defecto",
-        "confianza": 0.6904520392417908,
+        "confianza": 0.6902922987937927,
         "bbox": {
           "x1": 316,
           "y1": 244,
@@ -54,24 +54,40 @@
           "y2": 286
         },
         "centroide": {
-          "x": 352,
+          "x": 351,
           "y": 265
         },
-        "area": 2963
+        "area": 2987
+      },
+      {
+        "id": 3,
+        "clase": "Defecto",
+        "confianza": 0.5594134330749512,
+        "bbox": {
+          "x1": 271,
+          "y1": 129,
+          "x2": 323,
+          "y2": 158
+        },
+        "centroide": {
+          "x": 297,
+          "y": 143
+        },
+        "area": 1470
       }
     ]
   },
   "tiempos": {
-    "captura_ms": 0.27251243591308594,
-    "deteccion_defectos_ms": 91.26996994018555,
-    "total_ms": 845.3636169433594
+    "captura_ms": 0.1804828643798828,
+    "deteccion_defectos_ms": 74.86319541931152,
+    "total_ms": 707.0033550262451
   },
   "estadisticas": {
-    "total_defectos": 2,
-    "confianza_promedio": 0.6912282705307007,
-    "confianza_maxima": 0.6920045018196106,
-    "confianza_minima": 0.6904520392417908,
-    "area_total": 5894,
-    "area_promedio": 2947.0
+    "total_defectos": 3,
+    "confianza_promedio": 0.646920402844747,
+    "confianza_maxima": 0.6910554766654968,
+    "confianza_minima": 0.5594134330749512,
+    "area_total": 7355,
+    "area_promedio": 2451.6666666666665
   }
 }

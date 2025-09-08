@@ -194,60 +194,22 @@ class SegmentadorDefectosCoples:
             # Debug: Mostrar tamaño de imagen procesada
             print(f"🔍 Debug imagen segmentación - Procesada: {imagen_input.shape}")
             
-            # Ejecutar inferencia con timeout y manejo de errores
+            # Ejecutar inferencia sin timeout (tiempo no es crítico)
             tiempo_inicio = time.time()
             
             try:
-                # Configurar timeout para evitar crash
-                import signal
-                
-                def timeout_handler(signum, frame):
-                    raise TimeoutError("Inferencia ONNX excedió el tiempo límite")
-                
-                # Configurar timeout de 30 segundos (generoso para análisis completo)
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(30)  # Timeout generoso para análisis completo
-                
-                try:
-                    outputs = self.session.run(
-                        self.output_names,
-                        {self.input_name: imagen_input}
-                    )
-                    signal.alarm(0)  # Cancelar timeout
-                    print("✅ Inferencia ONNX exitosa")
-                except TimeoutError:
-                    signal.alarm(0)
-                    print("⚠️ Timeout en inferencia ONNX, usando fallback")
-                    # Crear outputs de fallback
-                    outputs = [
-                        np.zeros((1, 37, 8400), dtype=np.float32),  # Detections
-                        np.zeros((1, 32, 160, 160), dtype=np.float32)  # Mask protos
-                    ]
-                except Exception as e:
-                    signal.alarm(0)
-                    print(f"⚠️ Error en inferencia ONNX: {e}, usando fallback")
-                    # Crear outputs de fallback
-                    outputs = [
-                        np.zeros((1, 37, 8400), dtype=np.float32),  # Detections
-                        np.zeros((1, 32, 160, 160), dtype=np.float32)  # Mask protos
-                    ]
-                    
+                outputs = self.session.run(
+                    self.output_names,
+                    {self.input_name: imagen_input}
+                )
+                print("✅ Inferencia ONNX exitosa")
             except Exception as e:
-                print(f"⚠️ Error configurando timeout: {e}")
-                # Intentar inferencia sin timeout
-                try:
-                    outputs = self.session.run(
-                        self.output_names,
-                        {self.input_name: imagen_input}
-                    )
-                    print("✅ Inferencia ONNX exitosa (sin timeout)")
-                except Exception as e2:
-                    print(f"⚠️ Error en inferencia sin timeout: {e2}, usando fallback")
-                    # Crear outputs de fallback
-                    outputs = [
-                        np.zeros((1, 37, 8400), dtype=np.float32),  # Detections
-                        np.zeros((1, 32, 160, 160), dtype=np.float32)  # Mask protos
-                    ]
+                print(f"⚠️ Error en inferencia ONNX: {e}, usando fallback")
+                # Crear outputs de fallback
+                outputs = [
+                    np.zeros((1, 37, 8400), dtype=np.float32),  # Detections
+                    np.zeros((1, 32, 160, 160), dtype=np.float32)  # Mask protos
+                ]
             
             tiempo_inferencia = (time.time() - tiempo_inicio) * 1000  # ms
             

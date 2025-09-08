@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_segmentacion_defectos_20250908_164112.jpg",
-  "timestamp_procesamiento": "2025-09-08T16:41:13.501088",
-  "timestamp_captura": "2025-09-08T16:41:13.501088",
+  "archivo_imagen": "cople_segmentacion_defectos_20250908_173845.jpg",
+  "timestamp_procesamiento": "2025-09-08T17:38:46.465121",
+  "timestamp_captura": "2025-09-08T17:38:46.465121",
   "tipo_analisis": "segmentacion_defectos",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,60 +30,19 @@
       {
         "id": 1,
         "clase": "Defecto",
-        "confianza": 0.7049500346183777,
-        "bbox": {
-          "x1": 287,
-          "y1": 233,
-          "x2": 317,
-          "y2": 288
-        },
-        "centroide": {
-          "x": 302,
-          "y": 260
-        },
-        "area_bbox": 1595,
-        "area_mascara": 1054,
-        "dimensiones_mascara": {
-          "ancho": 0,
-          "alto": 0
-        },
-        "tiene_mascara": true,
-        "info_mascara": {
-          "shape": [
-            640,
-            640
-          ],
-          "tipo": "float32",
-          "rango": [
-            0.0,
-            1.0
-          ],
-          "pixels_activos": 1054
-        },
-        "coeficientes_mascara": [
-          -0.018435023725032806,
-          -0.1755741834640503,
-          -0.17491230368614197,
-          -0.23500420153141022,
-          -0.20175713300704956
-        ]
-      },
-      {
-        "id": 2,
-        "clase": "Defecto",
-        "confianza": 0.701832115650177,
+        "confianza": 0.7017041444778442,
         "bbox": {
           "x1": 314,
           "y1": 357,
-          "x2": 363,
+          "x2": 362,
           "y2": 390
         },
         "centroide": {
           "x": 338,
           "y": 373
         },
-        "area_bbox": 1569,
-        "area_mascara": 1007,
+        "area_bbox": 1583,
+        "area_mascara": 1001,
         "dimensiones_mascara": {
           "ancho": 0,
           "alto": 0
@@ -99,32 +58,73 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 1007
+          "pixels_activos": 1001
         },
         "coeficientes_mascara": [
-          0.009829819202423096,
-          -0.40300503373146057,
-          0.012859702110290527,
-          -0.22542208433151245,
-          -0.7419794201850891
+          0.01131895650178194,
+          -0.40254896879196167,
+          0.010489493608474731,
+          -0.22531791031360626,
+          -0.7471230626106262
+        ]
+      },
+      {
+        "id": 2,
+        "clase": "Defecto",
+        "confianza": 0.700837254524231,
+        "bbox": {
+          "x1": 287,
+          "y1": 232,
+          "x2": 317,
+          "y2": 287
+        },
+        "centroide": {
+          "x": 302,
+          "y": 260
+        },
+        "area_bbox": 1632,
+        "area_mascara": 1057,
+        "dimensiones_mascara": {
+          "ancho": 0,
+          "alto": 0
+        },
+        "tiene_mascara": true,
+        "info_mascara": {
+          "shape": [
+            640,
+            640
+          ],
+          "tipo": "float32",
+          "rango": [
+            0.0,
+            1.0
+          ],
+          "pixels_activos": 1057
+        },
+        "coeficientes_mascara": [
+          -0.016704067587852478,
+          -0.17939163744449615,
+          -0.17786955833435059,
+          -0.23879413306713104,
+          -0.20243121683597565
         ]
       },
       {
         "id": 3,
         "clase": "Defecto",
-        "confianza": 0.6956324577331543,
+        "confianza": 0.6924872994422913,
         "bbox": {
-          "x1": 459,
+          "x1": 458,
           "y1": 174,
           "x2": 493,
-          "y2": 204
+          "y2": 206
         },
         "centroide": {
           "x": 476,
-          "y": 189
+          "y": 190
         },
-        "area_bbox": 1038,
-        "area_mascara": 753,
+        "area_bbox": 1096,
+        "area_mascara": 795,
         "dimensiones_mascara": {
           "ancho": 0,
           "alto": 0
@@ -140,30 +140,30 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 753
+          "pixels_activos": 795
         },
         "coeficientes_mascara": [
-          0.04415534436702728,
-          -0.12493659555912018,
-          0.13216066360473633,
-          -0.18835905194282532,
-          -0.24613726139068604
+          0.05283381789922714,
+          -0.12565137445926666,
+          0.12559884786605835,
+          -0.18698082864284515,
+          -0.25228574872016907
         ]
       }
     ]
   },
   "tiempos": {
-    "captura_ms": 0.3440380096435547,
-    "segmentacion_defectos_ms": 131.93941116333008,
-    "total_ms": 731.4813137054443
+    "captura_ms": 0.2543926239013672,
+    "segmentacion_defectos_ms": 230.89146614074707,
+    "total_ms": 832.8127861022949
   },
   "estadisticas": {
     "total_defectos": 3,
-    "confianza_promedio": 0.700804869333903,
-    "confianza_maxima": 0.7049500346183777,
-    "confianza_minima": 0.6956324577331543,
-    "area_total_mascaras": 2814,
-    "area_promedio_mascaras": 938.0,
+    "confianza_promedio": 0.6983428994814554,
+    "confianza_maxima": 0.7017041444778442,
+    "confianza_minima": 0.6924872994422913,
+    "area_total_mascaras": 2853,
+    "area_promedio_mascaras": 951.0,
     "fusionadas": 0,
     "total_objetos_originales": 3
   }

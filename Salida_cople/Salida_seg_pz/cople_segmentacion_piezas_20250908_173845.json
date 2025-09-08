@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_segmentacion_piezas_20250908_165609.jpg",
-  "timestamp_procesamiento": "2025-09-08T16:56:09.915960",
-  "timestamp_captura": "20250908_165609",
+  "archivo_imagen": "cople_segmentacion_piezas_20250908_173845.jpg",
+  "timestamp_procesamiento": "2025-09-08T17:38:46.479525",
+  "timestamp_captura": "20250908_173845",
   "tipo_analisis": "segmentacion_piezas",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,21 +30,21 @@
       {
         "id": 1,
         "clase": "Cople",
-        "confianza": 0.7237593531608582,
+        "confianza": 0.7240126132965088,
         "bbox": {
           "x1": 130,
-          "y1": 57,
+          "y1": 58,
           "x2": 555,
-          "y2": 457
+          "y2": 458
         },
         "centroide": {
-          "x": 343,
-          "y": 257
+          "x": 342,
+          "y": 258
         },
-        "area_bbox": 170074,
-        "area_mascara": 164578,
+        "area_bbox": 170085,
+        "area_mascara": 160272,
         "dimensiones_mascara": {
-          "ancho": 424,
+          "ancho": 423,
           "alto": 399
         },
         "tiene_mascara": true,
@@ -58,14 +58,14 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 164578
+          "pixels_activos": 160272
         },
         "coeficientes_mascara": [
-          -0.4909144937992096,
-          -1.3250714540481567,
-          0.39950841665267944,
-          -0.1656990796327591,
-          0.0703393965959549
+          -0.5045620203018188,
+          -1.3831422328948975,
+          0.3966061472892761,
+          -0.1698232889175415,
+          0.05032617598772049
         ]
       }
     ]
@@ -77,11 +77,11 @@
   },
   "estadisticas": {
     "total_piezas": 1,
-    "confianza_promedio": 0.7237593531608582,
-    "confianza_maxima": 0.7237593531608582,
-    "confianza_minima": 0.7237593531608582,
-    "area_total_mascaras": 164578,
-    "area_promedio_mascaras": 164578.0,
+    "confianza_promedio": 0.7240126132965088,
+    "confianza_maxima": 0.7240126132965088,
+    "confianza_minima": 0.7240126132965088,
+    "area_total_mascaras": 160272,
+    "area_promedio_mascaras": 160272.0,
     "fusionadas": 0,
     "total_objetos_originales": 1
   }

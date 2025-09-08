@@ -369,15 +369,25 @@ class ProcesadorSegmentacionDefectos:
             else:
                 print(f"   ❌ Segmentación {i}: Máscara ausente o None")
         
-        # NUEVO: Verificar consistencia antes del procesamiento
-        self.mask_visualizer.verificar_consistencia_mascaras(segmentaciones)
+        # NUEVO: Verificar consistencia antes del procesamiento (sin timeout)
+        try:
+            self.mask_visualizer.verificar_consistencia_mascaras(segmentaciones)
+        except Exception as e:
+            print(f"   ⚠️ Error en verificación de consistencia: {e}")
         
-        self.mask_visualizer.debug_mask_info(segmentaciones)
+        try:
+            self.mask_visualizer.debug_mask_info(segmentaciones)
+        except Exception as e:
+            print(f"   ⚠️ Error en debug de máscaras: {e}")
         
-        # Visualización avanzada de máscaras
-        imagen_con_mascaras = self.mask_visualizer.visualizar_mascaras_completo(
-            imagen, segmentaciones, mostrar=False
-        )
+        # Visualización avanzada de máscaras (sin timeout)
+        try:
+            imagen_con_mascaras = self.mask_visualizer.visualizar_mascaras_completo(
+                imagen, segmentaciones, mostrar=False
+            )
+        except Exception as e:
+            print(f"   ⚠️ Error en visualización de máscaras: {e}")
+            imagen_con_mascaras = None
         
         # Si no hay máscaras válidas, usar visualización básica
         if imagen_con_mascaras is None or np.array_equal(imagen_con_mascaras, imagen):
@@ -389,7 +399,7 @@ class ProcesadorSegmentacionDefectos:
         # Agregar información de tiempos
         imagen_anotada = self.agregar_informacion_tiempo(imagen_anotada, tiempos)
         
-        # Crear mapa de calor si hay máscaras válidas
+        # Crear mapa de calor si hay máscaras válidas (sin timeout)
         try:
             mapa_calor = self.mask_visualizer.crear_mapa_calor_masks(segmentaciones, imagen.shape[:2])
             imagen_heatmap = self.mask_visualizer.visualizar_mapa_calor(imagen, mapa_calor)

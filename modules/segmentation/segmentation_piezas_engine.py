@@ -386,23 +386,18 @@ class SegmentadorPiezasCoples:
     def _generate_mask(self, mask_coeffs, mask_protos, bbox, input_shape):
         """
         Genera máscara a partir de coeficientes y prototipos de YOLO11
-        BASADO EN EL MÉTODO DE DEFECTOS QUE FUNCIONA BIEN
+        OPTIMIZADO PARA EVITAR TIMEOUTS DE CPU
         """
         try:
-            # Timeout para evitar colgadas en generación de máscaras
-            import signal
-            
-            def timeout_handler(signum, frame):
-                raise TimeoutError("Timeout en generación de máscara")
-            
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(30)  # 30 segundos timeout para generación de máscara
+            # OPTIMIZACIÓN: Usar operación más eficiente que np.tensordot
             # Extraer prototipos (shape: [1, 32, 160, 160])
             protos = mask_protos[0]  # Shape: [32, 160, 160]
             
-            # Aplicar coeficientes a prototipos
-            # mask_coeffs shape: [32], protos shape: [32, 160, 160]
-            mask = np.tensordot(mask_coeffs, protos, axes=([0], [0]))  # Shape: [160, 160]
+            # OPTIMIZACIÓN: Usar np.dot en lugar de np.tensordot para mejor rendimiento
+            # Reshape para operación más eficiente
+            protos_reshaped = protos.reshape(32, -1)  # Shape: [32, 160*160]
+            mask_flat = np.dot(mask_coeffs, protos_reshaped)  # Shape: [160*160]
+            mask = mask_flat.reshape(160, 160)  # Shape: [160, 160]
             
             # Aplicar sigmoid para normalizar
             mask = self._sigmoid(mask)
@@ -439,24 +434,10 @@ class SegmentadorPiezasCoples:
                     mask_cropped[y1:y2, x1:x2] = bbox_mask_binary
             
             pixels_activos = np.sum(mask_cropped > 0.5)
-            print(f"   ✅ Máscara generada (con prototipos): {mask.shape}, rango: [{mask.min():.3f}, {mask.max():.3f}]")
+            print(f"   ✅ Máscara generada (optimizada): {mask.shape}, rango: [{mask.min():.3f}, {mask.max():.3f}]")
             print(f"   📊 Píxeles activos: {pixels_activos} de {mask_cropped.size}")
             
-            signal.alarm(0)  # Cancelar timeout
             return mask_cropped
-            
-        except TimeoutError:
-            signal.alarm(0)
-            print(f"   ⚠️ Timeout en generación de máscara, usando fallback")
-            # Fallback: máscara rectangular simple
-            x1, y1, x2, y2 = map(int, bbox)
-            H, W = input_shape
-            
-            mask = np.zeros((H, W), dtype=np.float32)
-            mask[y1:y2, x1:x2] = 1.0
-            
-            print(f"   ✅ Máscara fallback generada: {mask.shape}, píxeles activos: {np.sum(mask > 0.5)}")
-            return mask
             
         except Exception as e:
             print(f"   ⚠️  Error con prototipos: {e}, usando fallback")

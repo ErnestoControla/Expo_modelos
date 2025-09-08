@@ -193,35 +193,20 @@ class DetectorDefectosCoples:
             # Debug: Mostrar tamaño de imagen procesada
             print(f"🔍 Debug imagen defectos - Procesada: {imagen_input.shape}")
             
-            # Ejecutar inferencia con TIMEOUT CRÍTICO
+            # Ejecutar inferencia sin timeout (tiempo no es crítico)
             tiempo_inicio = time.time()
-            
-            # TIMEOUT: Evitar que se cuelgue durante análisis completo
-            import signal
-            
-            def timeout_handler(signum, frame):
-                raise TimeoutError("Timeout en detección de defectos")
-            
-            # Configurar timeout de 30 segundos (generoso para análisis completo)
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(30)
             
             try:
                 outputs = self.session.run(
                     self.output_names,
                     {self.input_name: imagen_input}
                 )
-                signal.alarm(0)  # Cancelar timeout
                 
                 tiempo_inferencia = (time.time() - tiempo_inicio) * 1000  # ms
                 
-            except TimeoutError:
-                print("⚠️  Timeout en detección de defectos, usando fallback")
-                signal.alarm(0)
-                return []
             except Exception as e:
-                signal.alarm(0)
-                raise e
+                print(f"⚠️ Error en detección de defectos: {e}")
+                return []
             
             # Actualizar estadísticas
             self.tiempo_inferencia = tiempo_inferencia
