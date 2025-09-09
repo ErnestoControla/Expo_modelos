@@ -276,7 +276,6 @@ class SistemaAnalisisIntegrado:
             
             # 2. Capturar imagen única
             print("📷 Capturando imagen única...")
-            tiempo_captura_inicio = time.time()
             resultado_captura = self.capturar_imagen_unica()
             if "error" in resultado_captura:
                 # Reanudar captura continua en caso de error
@@ -285,12 +284,13 @@ class SistemaAnalisisIntegrado:
             
             frame = resultado_captura["frame"]
             timestamp_captura = resultado_captura["timestamp_captura"]
-            tiempo_captura = (time.time() - tiempo_captura_inicio) * 1000
+            tiempo_captura = resultado_captura["tiempos"]["captura_ms"]  # Usar tiempo de capturar_imagen_unica
             print(f"✅ Imagen capturada en {tiempo_captura:.2f} ms")
             
             # Verificar frame capturado (logs simplificados)
             print(f"📊 Frame capturado: {frame.shape if hasattr(frame, 'shape') else 'No shape'}")
             
+            # CORREGIDO: Iniciar cronómetro total DESPUÉS de captura, ANTES de procesamiento
             tiempo_inicio_total = time.time()
             
             # 3. CLASIFICACIÓN (SECUENCIAL)
@@ -418,8 +418,9 @@ class SistemaAnalisisIntegrado:
                 segmentaciones_piezas = []
                 tiempo_segmentacion_piezas = 0
             
-            # 7. Calcular tiempo total
-            tiempo_total = (time.time() - tiempo_inicio_total) * 1000
+            # 7. Calcular tiempo total (suma de todos los tiempos de procesamiento + captura)
+            tiempo_procesamiento_total = (time.time() - tiempo_inicio_total) * 1000
+            tiempo_total = tiempo_captura + tiempo_procesamiento_total
             
             # 8. Crear resultados
             resultados = {
@@ -491,15 +492,15 @@ class SistemaAnalisisIntegrado:
             timestamp_captura = resultado_captura["timestamp_captura"]
             tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
             
-            tiempo_inicio = time.time()
-            
             # 2. Clasificación
+            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro DESPUÉS de captura
             tiempo_clasificacion_inicio = time.time()
             resultado_clasificacion = self.clasificador.clasificar(frame)
             tiempo_clasificacion = (time.time() - tiempo_clasificacion_inicio) * 1000
             
-            # 3. Calcular tiempo total
-            tiempo_total = (time.time() - tiempo_inicio) * 1000
+            # 3. Calcular tiempo total (captura + procesamiento)
+            tiempo_procesamiento = (time.time() - tiempo_inicio) * 1000
+            tiempo_total = tiempo_captura + tiempo_procesamiento
             
             # 4. Crear resultados
             # resultado_clasificacion es una tupla: (clase, confianza, tiempo_inferencia)
@@ -549,15 +550,15 @@ class SistemaAnalisisIntegrado:
             timestamp_captura = resultado_captura["timestamp_captura"]
             tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
             
-            tiempo_inicio = time.time()
-            
             # 2. Detección de piezas
+            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro DESPUÉS de captura
             tiempo_deteccion_inicio = time.time()
             detecciones = self.detector_piezas.detectar_piezas(frame)
             tiempo_deteccion = (time.time() - tiempo_deteccion_inicio) * 1000
             
-            # 3. Calcular tiempo total
-            tiempo_total = (time.time() - tiempo_inicio) * 1000
+            # 3. Calcular tiempo total (captura + procesamiento)
+            tiempo_procesamiento = (time.time() - tiempo_inicio) * 1000
+            tiempo_total = tiempo_captura + tiempo_procesamiento
             
             # 4. Crear resultados
             resultados = {
@@ -592,6 +593,7 @@ class SistemaAnalisisIntegrado:
         
         try:
             # 1. Capturar imagen única
+            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro total ANTES de captura
             resultado_captura = self.capturar_imagen_unica()
             if "error" in resultado_captura:
                 return resultado_captura
@@ -599,8 +601,6 @@ class SistemaAnalisisIntegrado:
             frame = resultado_captura["frame"]
             timestamp_captura = resultado_captura["timestamp_captura"]
             tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
-            
-            tiempo_inicio = time.time()
             
             # 2. Detección de defectos
             tiempo_deteccion_inicio = time.time()
@@ -643,6 +643,7 @@ class SistemaAnalisisIntegrado:
         
         try:
             # 1. Capturar imagen única
+            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro total ANTES de captura
             resultado_captura = self.capturar_imagen_unica()
             if "error" in resultado_captura:
                 return resultado_captura
@@ -650,8 +651,6 @@ class SistemaAnalisisIntegrado:
             frame = resultado_captura["frame"]
             timestamp_captura = resultado_captura["timestamp_captura"]
             tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
-            
-            tiempo_inicio = time.time()
             
             # 2. Segmentación de defectos
             tiempo_segmentacion_inicio = time.time()
@@ -694,6 +693,7 @@ class SistemaAnalisisIntegrado:
         
         try:
             # 1. Capturar imagen única
+            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro total ANTES de captura
             resultado_captura = self.capturar_imagen_unica()
             if "error" in resultado_captura:
                 return resultado_captura
@@ -701,8 +701,6 @@ class SistemaAnalisisIntegrado:
             frame = resultado_captura["frame"]
             timestamp_captura = resultado_captura["timestamp_captura"]
             tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
-            
-            tiempo_inicio = time.time()
             
             # 2. Segmentación de piezas
             tiempo_segmentacion_inicio = time.time()

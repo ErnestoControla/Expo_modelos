@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "clasificacion_20250908_173845_1.jpg",
-  "timestamp_procesamiento": "2025-09-08T17:38:46.436746",
-  "timestamp_captura": "20250908_173845",
+  "archivo_imagen": "clasificacion_20250908_180540_5.jpg",
+  "timestamp_procesamiento": "2025-09-08T18:05:41.177880",
+  "timestamp_captura": "20250908_180540",
   "tipo_analisis": "clasificacion",
   "version_metadatos": "1.0",
   "modelo": {
@@ -29,19 +29,19 @@
   "resultados": {
     "clasificacion": {
       "clase": "Rechazado",
-      "confianza": 0.8914488554000854,
-      "tiempo_inferencia_ms": 44.35586929321289
+      "confianza": 0.9002490639686584,
+      "tiempo_inferencia_ms": 50.52804946899414
     }
   },
   "tiempos": {
-    "captura_ms": 0.2543926239013672,
-    "clasificacion_ms": 44.39806938171387,
-    "total_ms": 832.8127861022949
+    "captura_ms": 0.10228157043457031,
+    "clasificacion_ms": 50.569772720336914,
+    "total_ms": 873.7037181854248
   },
   "estadisticas": {
     "total_clasificaciones": 1,
-    "confianza_promedio": 0.8914488554000854,
-    "confianza_maxima": 0.8914488554000854,
-    "confianza_minima": 0.8914488554000854
+    "confianza_promedio": 0.9002490639686584,
+    "confianza_maxima": 0.9002490639686584,
+    "confianza_minima": 0.9002490639686584
   }
 }

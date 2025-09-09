@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_deteccion_defectos_20250908_173845.jpg",
-  "timestamp_procesamiento": "2025-09-08T17:38:46.443040",
-  "timestamp_captura": "2025-09-08T17:38:46.443040",
+  "archivo_imagen": "cople_deteccion_defectos_20250908_180515.jpg",
+  "timestamp_procesamiento": "2025-09-08T18:05:15.979990",
+  "timestamp_captura": "2025-09-08T18:05:15.979990",
   "tipo_analisis": "deteccion_defectos",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,26 +30,26 @@
       {
         "id": 1,
         "clase": "Defecto",
-        "confianza": 0.6922776699066162,
+        "confianza": 0.6946545243263245,
         "bbox": {
           "x1": 316,
           "y1": 245,
           "x2": 387,
-          "y2": 286
+          "y2": 287
         },
         "centroide": {
           "x": 351,
-          "y": 265
+          "y": 266
         },
-        "area": 2904
+        "area": 2969
       },
       {
         "id": 2,
         "clase": "Defecto",
-        "confianza": 0.6907687187194824,
+        "confianza": 0.692567765712738,
         "bbox": {
           "x1": 304,
-          "y1": 350,
+          "y1": 349,
           "x2": 368,
           "y2": 395
         },
@@ -62,16 +62,16 @@
     ]
   },
   "tiempos": {
-    "captura_ms": 0.2543926239013672,
-    "deteccion_defectos_ms": 85.46948432922363,
-    "total_ms": 832.8127861022949
+    "captura_ms": 0.141143798828125,
+    "deteccion_defectos_ms": 83.71806144714355,
+    "total_ms": 83.89115333557129
   },
   "estadisticas": {
     "total_defectos": 2,
-    "confianza_promedio": 0.6915231943130493,
-    "confianza_maxima": 0.6922776699066162,
-    "confianza_minima": 0.6907687187194824,
-    "area_total": 5824,
-    "area_promedio": 2912.0
+    "confianza_promedio": 0.6936111450195312,
+    "confianza_maxima": 0.6946545243263245,
+    "confianza_minima": 0.692567765712738,
+    "area_total": 5889,
+    "area_promedio": 2944.5
   }
 }
