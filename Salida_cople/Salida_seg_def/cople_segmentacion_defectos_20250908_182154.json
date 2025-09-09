@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_segmentacion_defectos_20250908_180523.jpg",
-  "timestamp_procesamiento": "2025-09-08T18:05:23.394753",
-  "timestamp_captura": "2025-09-08T18:05:23.394753",
+  "archivo_imagen": "cople_segmentacion_defectos_20250908_182154.jpg",
+  "timestamp_procesamiento": "2025-09-08T18:21:55.039682",
+  "timestamp_captura": "2025-09-08T18:21:55.039682",
   "tipo_analisis": "segmentacion_defectos",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,19 +30,19 @@
       {
         "id": 1,
         "clase": "Defecto",
-        "confianza": 0.7033115029335022,
+        "confianza": 0.7028287649154663,
         "bbox": {
           "x1": 314,
           "y1": 357,
-          "x2": 363,
-          "y2": 389
+          "x2": 362,
+          "y2": 390
         },
         "centroide": {
           "x": 338,
           "y": 373
         },
-        "area_bbox": 1603,
-        "area_mascara": 1016,
+        "area_bbox": 1605,
+        "area_mascara": 1022,
         "dimensiones_mascara": {
           "ancho": 0,
           "alto": 0
@@ -58,20 +58,20 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 1016
+          "pixels_activos": 1022
         },
         "coeficientes_mascara": [
-          0.017888106405735016,
-          -0.4075435996055603,
-          0.007584959268569946,
-          -0.22911331057548523,
-          -0.7571938037872314
+          0.03632930666208267,
+          -0.3934515118598938,
+          0.026362240314483643,
+          -0.2187940925359726,
+          -0.7521796822547913
         ]
       },
       {
         "id": 2,
         "clase": "Defecto",
-        "confianza": 0.7021341919898987,
+        "confianza": 0.7014020085334778,
         "bbox": {
           "x1": 325,
           "y1": 254,
@@ -82,8 +82,8 @@
           "x": 352,
           "y": 266
         },
-        "area_bbox": 1305,
-        "area_mascara": 965,
+        "area_bbox": 1327,
+        "area_mascara": 967,
         "dimensiones_mascara": {
           "ancho": 0,
           "alto": 0
@@ -99,32 +99,32 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 965
+          "pixels_activos": 967
         },
         "coeficientes_mascara": [
-          -0.2031998485326767,
-          -0.23783311247825623,
-          0.10071384906768799,
-          -0.20080061256885529,
-          -0.5196563005447388
+          -0.20709429681301117,
+          -0.2520718276500702,
+          0.09402742981910706,
+          -0.1927732527256012,
+          -0.5390223264694214
         ]
       },
       {
         "id": 3,
         "clase": "Defecto",
-        "confianza": 0.6985180377960205,
+        "confianza": 0.7001957893371582,
         "bbox": {
           "x1": 457,
           "y1": 174,
-          "x2": 492,
+          "x2": 493,
           "y2": 206
         },
         "centroide": {
           "x": 475,
           "y": 190
         },
-        "area_bbox": 1118,
-        "area_mascara": 798,
+        "area_bbox": 1152,
+        "area_mascara": 809,
         "dimensiones_mascara": {
           "ancho": 0,
           "alto": 0
@@ -140,30 +140,30 @@
             0.0,
             1.0
           ],
-          "pixels_activos": 798
+          "pixels_activos": 809
         },
         "coeficientes_mascara": [
-          0.052048612385988235,
-          -0.13166910409927368,
-          0.13227024674415588,
-          -0.16222208738327026,
-          -0.259660005569458
+          0.053364772349596024,
+          -0.14782795310020447,
+          0.1063433438539505,
+          -0.19305485486984253,
+          -0.2993164360523224
         ]
       }
     ]
   },
   "tiempos": {
-    "captura_ms": 0.1220703125,
-    "segmentacion_defectos_ms": 230.00073432922363,
-    "total_ms": 230.1485538482666
+    "captura_ms": 0.1354217529296875,
+    "segmentacion_defectos_ms": 146.18492126464844,
+    "total_ms": 146.32201194763184
   },
   "estadisticas": {
     "total_defectos": 3,
-    "confianza_promedio": 0.7013212442398071,
-    "confianza_maxima": 0.7033115029335022,
-    "confianza_minima": 0.6985180377960205,
-    "area_total_mascaras": 2779,
-    "area_promedio_mascaras": 926.3333333333334,
+    "confianza_promedio": 0.7014755209287008,
+    "confianza_maxima": 0.7028287649154663,
+    "confianza_minima": 0.7001957893371582,
+    "area_total_mascaras": 2798,
+    "area_promedio_mascaras": 932.6666666666666,
     "fusionadas": 0,
     "total_objetos_originales": 3
   }

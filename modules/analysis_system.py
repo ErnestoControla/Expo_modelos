@@ -565,7 +565,7 @@ class SistemaAnalisisIntegrado:
                 "detecciones_piezas": detecciones,
                 "tiempos": {
                     "captura_ms": tiempo_captura,
-                    "deteccion_ms": tiempo_deteccion,
+                    "deteccion_piezas_ms": tiempo_deteccion,
                     "total_ms": tiempo_total
                 },
                 "frame": frame,
@@ -593,7 +593,6 @@ class SistemaAnalisisIntegrado:
         
         try:
             # 1. Capturar imagen única
-            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro total ANTES de captura
             resultado_captura = self.capturar_imagen_unica()
             if "error" in resultado_captura:
                 return resultado_captura
@@ -603,12 +602,14 @@ class SistemaAnalisisIntegrado:
             tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
             
             # 2. Detección de defectos
+            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro DESPUÉS de captura
             tiempo_deteccion_inicio = time.time()
             detecciones_defectos = self.detector_defectos.detectar_defectos(frame)
             tiempo_deteccion = (time.time() - tiempo_deteccion_inicio) * 1000
             
-            # 3. Calcular tiempo total
-            tiempo_total = (time.time() - tiempo_inicio) * 1000
+            # 3. Calcular tiempo total (captura + procesamiento)
+            tiempo_procesamiento = (time.time() - tiempo_inicio) * 1000
+            tiempo_total = tiempo_captura + tiempo_procesamiento
             
             # 4. Crear resultados
             resultados = {
@@ -643,7 +644,6 @@ class SistemaAnalisisIntegrado:
         
         try:
             # 1. Capturar imagen única
-            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro total ANTES de captura
             resultado_captura = self.capturar_imagen_unica()
             if "error" in resultado_captura:
                 return resultado_captura
@@ -653,12 +653,14 @@ class SistemaAnalisisIntegrado:
             tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
             
             # 2. Segmentación de defectos
+            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro DESPUÉS de captura
             tiempo_segmentacion_inicio = time.time()
             segmentaciones_defectos = self.segmentador_defectos.segmentar_defectos(frame)
             tiempo_segmentacion = (time.time() - tiempo_segmentacion_inicio) * 1000
             
-            # 3. Calcular tiempo total
-            tiempo_total = (time.time() - tiempo_inicio) * 1000
+            # 3. Calcular tiempo total (captura + procesamiento)
+            tiempo_procesamiento = (time.time() - tiempo_inicio) * 1000
+            tiempo_total = tiempo_captura + tiempo_procesamiento
             
             # 4. Crear resultados
             resultados = {
@@ -693,7 +695,6 @@ class SistemaAnalisisIntegrado:
         
         try:
             # 1. Capturar imagen única
-            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro total ANTES de captura
             resultado_captura = self.capturar_imagen_unica()
             if "error" in resultado_captura:
                 return resultado_captura
@@ -703,12 +704,14 @@ class SistemaAnalisisIntegrado:
             tiempo_captura = resultado_captura["tiempos"]["captura_ms"]
             
             # 2. Segmentación de piezas
+            tiempo_inicio = time.time()  # CORREGIDO: Iniciar cronómetro DESPUÉS de captura
             tiempo_segmentacion_inicio = time.time()
             segmentaciones_piezas = self.segmentador_piezas.segmentar(frame)
             tiempo_segmentacion = (time.time() - tiempo_segmentacion_inicio) * 1000
             
-            # 3. Calcular tiempo total
-            tiempo_total = (time.time() - tiempo_inicio) * 1000
+            # 3. Calcular tiempo total (captura + procesamiento)
+            tiempo_procesamiento = (time.time() - tiempo_inicio) * 1000
+            tiempo_total = tiempo_captura + tiempo_procesamiento
             
             # 4. Crear resultados
             resultados = {
@@ -717,14 +720,14 @@ class SistemaAnalisisIntegrado:
                 "segmentaciones_piezas": segmentaciones_piezas,
                 "tiempos": {
                     "captura_ms": tiempo_captura,
-                    "segmentacion_ms": tiempo_segmentacion,
+                    "segmentacion_piezas_ms": tiempo_segmentacion,
                     "total_ms": tiempo_total
                 }
             }
             
             # 5. Procesar y guardar resultados
             self.procesador_segmentacion_piezas.procesar_segmentaciones(
-                frame, segmentaciones_piezas, timestamp_captura
+                frame, segmentaciones_piezas, timestamp_captura, resultados["tiempos"]
             )
             
             # 6. Mostrar resultados

@@ -437,7 +437,7 @@ def procesar_comando_solo_deteccion_piezas(sistema, ventana_cv):
         tiempos = resultados["tiempos"]
         print(f"\n⏱️  TIEMPOS:")
         print(f"   Captura:   {tiempos.get('captura_ms', 0):.2f} ms")
-        print(f"   Detección: {tiempos.get('deteccion_ms', 0):.2f} ms")
+        print(f"   Detección: {tiempos.get('deteccion_piezas_ms', 0):.2f} ms")
         print(f"   Total:     {tiempos.get('total_ms', 0):.2f} ms")
     
     print("=" * 60)
@@ -619,7 +619,7 @@ def procesar_comando_solo_segmentacion_piezas(sistema, ventana_cv):
         tiempos = resultados["tiempos"]
         print(f"\n⏱️  TIEMPOS:")
         print(f"   Captura:      {tiempos['captura_ms']:.2f} ms")
-        print(f"   Segmentación: {tiempos['segmentacion_ms']:.2f} ms")
+        print(f"   Segmentación: {tiempos['segmentacion_piezas_ms']:.2f} ms")
         print(f"   Total:        {tiempos['total_ms']:.2f} ms")
     
     print("=" * 60)

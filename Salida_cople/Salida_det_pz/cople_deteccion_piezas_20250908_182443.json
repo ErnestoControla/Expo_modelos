@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_deteccion_piezas_20250908_180510.jpg",
-  "timestamp_procesamiento": "2025-09-08T18:05:11.188953",
-  "timestamp_captura": "2025-09-08T18:05:11.188953",
+  "archivo_imagen": "cople_deteccion_piezas_20250908_182443.jpg",
+  "timestamp_procesamiento": "2025-09-08T18:24:43.258362",
+  "timestamp_captura": "2025-09-08T18:24:43.258362",
   "tipo_analisis": "deteccion_piezas",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,32 +30,32 @@
       {
         "id": 1,
         "clase": "Cople",
-        "confianza": 0.7049520611763,
+        "confianza": 0.7065199017524719,
         "bbox": {
           "x1": 121,
           "y1": 39,
-          "x2": 577,
-          "y2": 465
+          "x2": 569,
+          "y2": 466
         },
         "centroide": {
-          "x": 349,
-          "y": 252
+          "x": 345,
+          "y": 253
         },
-        "area": 193943
+        "area": 190886
       }
     ]
   },
   "tiempos": {
-    "captura_ms": 0.133514404296875,
-    "deteccion_piezas_ms": 0.0,
-    "total_ms": 86.74311637878418
+    "captura_ms": 0.16999244689941406,
+    "deteccion_piezas_ms": 95.39437294006348,
+    "total_ms": 95.5653190612793
   },
   "estadisticas": {
     "total_piezas": 1,
-    "confianza_promedio": 0.7049520611763,
-    "confianza_maxima": 0.7049520611763,
-    "confianza_minima": 0.7049520611763,
-    "area_total": 193943,
-    "area_promedio": 193943.0
+    "confianza_promedio": 0.7065199017524719,
+    "confianza_maxima": 0.7065199017524719,
+    "confianza_minima": 0.7065199017524719,
+    "area_total": 190886,
+    "area_promedio": 190886.0
   }
 }

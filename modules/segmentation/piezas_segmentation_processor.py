@@ -62,7 +62,7 @@ class ProcesadorSegmentacionPiezas:
             print(f"⚠️ Error creando directorio de salida: {e}")
     
     def procesar_segmentaciones(self, imagen: np.ndarray, segmentaciones: List[Dict], 
-                               timestamp: Optional[str] = None) -> Dict:
+                               timestamp: Optional[str] = None, tiempos: Optional[Dict] = None) -> Dict:
         """
         Procesa las segmentaciones de piezas y genera visualizaciones.
         
@@ -70,6 +70,7 @@ class ProcesadorSegmentacionPiezas:
             imagen (np.ndarray): Imagen original
             segmentaciones (List[Dict]): Lista de segmentaciones detectadas
             timestamp (str, optional): Timestamp para nombres de archivo
+            tiempos (Dict, optional): Diccionario con tiempos de procesamiento
             
         Returns:
             Dict: Información de los archivos generados
@@ -108,7 +109,7 @@ class ProcesadorSegmentacionPiezas:
             
             # Guardar archivos
             cv2.imwrite(archivo_imagen, imagen_visualizacion)
-            self._guardar_json(archivo_json, segmentaciones_procesadas, timestamp)
+            self._guardar_json(archivo_json, segmentaciones_procesadas, timestamp, tiempos)
             cv2.imwrite(archivo_heatmap, mapa_calor)
             
             print(f"✅ Imagen guardada: {archivo_imagen}")
@@ -321,7 +322,7 @@ class ProcesadorSegmentacionPiezas:
             print(f"❌ Error creando mapa de calor: {e}")
             return imagen
     
-    def _guardar_json(self, archivo_json: str, segmentaciones: List[Dict], timestamp: str):
+    def _guardar_json(self, archivo_json: str, segmentaciones: List[Dict], timestamp: str, tiempos: Optional[Dict] = None):
         """
         Guarda las segmentaciones en formato JSON con metadatos usando estructura estándar.
         
@@ -329,6 +330,7 @@ class ProcesadorSegmentacionPiezas:
             archivo_json (str): Ruta del archivo JSON
             segmentaciones (List[Dict]): Lista de segmentaciones
             timestamp (str): Timestamp de la captura
+            tiempos (Dict, optional): Diccionario con tiempos de procesamiento
         """
         try:
             # Crear metadatos usando estructura estándar
@@ -336,7 +338,7 @@ class ProcesadorSegmentacionPiezas:
                 tipo_analisis="segmentacion_piezas",
                 archivo_imagen=os.path.basename(archivo_json).replace('.json', '.jpg'),
                 resultados=segmentaciones,
-                tiempos={},  # Los tiempos se manejan en el método principal
+                tiempos=tiempos or {},  # Usar tiempos proporcionados o diccionario vacío
                 timestamp_captura=timestamp
             )
             

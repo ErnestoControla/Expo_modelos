@@ -1,7 +1,7 @@
 {
-  "archivo_imagen": "cople_deteccion_defectos_20250908_180515.jpg",
-  "timestamp_procesamiento": "2025-09-08T18:05:15.979990",
-  "timestamp_captura": "2025-09-08T18:05:15.979990",
+  "archivo_imagen": "cople_deteccion_defectos_20250908_182521.jpg",
+  "timestamp_procesamiento": "2025-09-08T18:25:21.180604",
+  "timestamp_captura": "2025-09-08T18:25:21.180604",
   "tipo_analisis": "deteccion_defectos",
   "version_metadatos": "1.0",
   "modelo": {
@@ -30,26 +30,26 @@
       {
         "id": 1,
         "clase": "Defecto",
-        "confianza": 0.6946545243263245,
+        "confianza": 0.6932445168495178,
         "bbox": {
           "x1": 316,
-          "y1": 245,
-          "x2": 387,
-          "y2": 287
+          "y1": 244,
+          "x2": 386,
+          "y2": 286
         },
         "centroide": {
           "x": 351,
-          "y": 266
+          "y": 265
         },
-        "area": 2969
+        "area": 2933
       },
       {
         "id": 2,
         "clase": "Defecto",
-        "confianza": 0.692567765712738,
+        "confianza": 0.6913845539093018,
         "bbox": {
           "x1": 304,
-          "y1": 349,
+          "y1": 350,
           "x2": 368,
           "y2": 395
         },
@@ -57,21 +57,21 @@
           "x": 336,
           "y": 372
         },
-        "area": 2920
+        "area": 2933
       }
     ]
   },
   "tiempos": {
-    "captura_ms": 0.141143798828125,
-    "deteccion_defectos_ms": 83.71806144714355,
-    "total_ms": 83.89115333557129
+    "captura_ms": 0.1385211944580078,
+    "deteccion_defectos_ms": 90.57283401489258,
+    "total_ms": 90.71183204650879
   },
   "estadisticas": {
     "total_defectos": 2,
-    "confianza_promedio": 0.6936111450195312,
-    "confianza_maxima": 0.6946545243263245,
-    "confianza_minima": 0.692567765712738,
-    "area_total": 5889,
-    "area_promedio": 2944.5
+    "confianza_promedio": 0.6923145353794098,
+    "confianza_maxima": 0.6932445168495178,
+    "confianza_minima": 0.6913845539093018,
+    "area_total": 5866,
+    "area_promedio": 2933.0
   }
 }
